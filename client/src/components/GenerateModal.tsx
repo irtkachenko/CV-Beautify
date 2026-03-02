@@ -5,6 +5,7 @@ import { X, Sparkles, Loader2, FileText, AlertCircle } from "lucide-react";
 import { useGenerateCv } from "@/hooks/use-generate";
 import { useToast } from "@/hooks/use-toast";
 import { Dropzone } from "@/components/ui/dropzone";
+import { InsetScrollArea } from "@/components/ui/inset-scroll-area";
 import type { CvTemplate } from "@shared/routes";
 import { DEFAULT_GENERATION_TEMPERATURE, MODEL_TEMPERATURE_MAX, MODEL_TEMPERATURE_MIN } from "@shared/config";
 import { useTranslation } from "react-i18next";
@@ -148,7 +149,12 @@ export function GenerateModal({ template, isOpen, onClose }: GenerateModalProps)
 
           {/* Right: Form */}
           <div className="w-full md:w-3/5 p-4 sm:p-6 lg:p-8 flex flex-col max-h-[58vh] md:max-h-[85vh]">
-            <div className="flex-1 overflow-y-auto pr-3 custom-scrollbar">
+            <InsetScrollArea
+              className="flex-1"
+              viewportClassName="pr-3"
+              scrollbarTopClassName="top-52"
+              scrollbarBottomClassName="bottom-3"
+            >
               <div className="mb-6 sm:mb-8">
                 <h2 className="font-display font-bold text-lg sm:text-xl lg:text-2xl mb-2 text-foreground">{t("modal.import_content")}</h2>
                 <p className="text-muted-foreground text-sm">
@@ -259,33 +265,10 @@ export function GenerateModal({ template, isOpen, onClose }: GenerateModalProps)
                 </button>
               </div>
               </form>
-            </div>
+            </InsetScrollArea>
           </div>
         </motion.div>
       </div>
-      <style>{`
-        .custom-scrollbar {
-          scrollbar-width: thin;
-          scrollbar-color: rgba(0,0,0,0.25) transparent;
-        }
-        .custom-scrollbar::-webkit-scrollbar {
-          width: 8px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-          background: transparent;
-          margin-top: 52px;
-          margin-bottom: 12px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-          background-color: rgba(0,0,0,0.35);
-          border-radius: 999px;
-          border: 2px solid transparent;
-          background-clip: padding-box;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background-color: rgba(0,0,0,0.45);
-        }
-      `}</style>
     </AnimatePresence>
   );
 }
