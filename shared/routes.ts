@@ -61,6 +61,7 @@ export const api = {
         templateId: z.number().int().positive("Template ID must be a positive integer"),
         file: docxFileSchema,
         generationPrompt: z.string().optional(),
+        temperature: z.number().min(0).max(2).optional(),
       }),
       responses: {
         202: z.object({ jobId: z.number() }),
@@ -95,6 +96,7 @@ export const api = {
       input: z.object({
         prompt: z.string(),
         useOriginalDocumentContext: z.boolean().optional(),
+        temperature: z.number().min(0).max(2).optional(),
       }),
       responses: {
         202: z.object({ jobId: z.number() }),

@@ -42,6 +42,10 @@ const AI_MODEL = "meta-llama/llama-3.3-70b-instruct";
 const AI_EDIT_PROMPT_MIN_LENGTH = 10;
 const AI_EDIT_PROMPT_MAX_LENGTH = 1000;
 const GENERATION_PROMPT_MAX_LENGTH = 600;
+const MODEL_TEMPERATURE_MIN = 0;
+const MODEL_TEMPERATURE_MAX = 2;
+const DEFAULT_GENERATION_TEMPERATURE = 0.1;
+const DEFAULT_EDIT_TEMPERATURE = 0.1;
 const MAX_GENERATED_HTML_CHARS = appConfig.html.maxGeneratedHtmlChars;
 const MAX_ORIGINAL_DOC_TEXT_CHARS = 200_000;
 const MAX_ORIGINAL_CONTEXT_PROMPT_CHARS = 25_000;
@@ -126,6 +130,10 @@ export async function registerRoutes(
       const cvText = fileResult.text;
       const generationPromptRaw = typeof req.body.generationPrompt === "string" ? req.body.generationPrompt : "";
       const generationPrompt = generationPromptRaw.replace(/\u0000/g, "").trim();
+      const generationTemperature = parseModelTemperature(
+        req.body.temperature,
+        DEFAULT_GENERATION_TEMPERATURE
+      );
       if (generationPrompt.length > GENERATION_PROMPT_MAX_LENGTH) {
         return res.status(400).json({
           message: `Additional generation prompt is too long. Maximum ${GENERATION_PROMPT_MAX_LENGTH} characters.`,
@@ -189,7 +197,14 @@ export async function registerRoutes(
       });
 
       // 3. Start async generation
-      generateCvAsync(cv.id, templateId, cvText, sourceInfo, generationPrompt || undefined).catch(err => {
+      generateCvAsync(
+        cv.id,
+        templateId,
+        cvText,
+        sourceInfo,
+        generationPrompt || undefined,
+        generationTemperature
+      ).catch(err => {
       });
 
       res.status(202).json({ jobId: cv.id });
@@ -308,6 +323,9 @@ export async function registerRoutes(
 
       const prompt = parsedBody.data.prompt.replace(/\u0000/g, "").trim();
       const useOriginalDocumentContext = parsedBody.data.useOriginalDocumentContext ?? false;
+      const editTemperature = clampModelTemperature(
+        parsedBody.data.temperature ?? DEFAULT_EDIT_TEMPERATURE
+      );
       if (prompt.length < AI_EDIT_PROMPT_MIN_LENGTH) {
         return res.status(400).json({
           message: `Prompt is too short. Minimum ${AI_EDIT_PROMPT_MIN_LENGTH} characters.`,
@@ -353,7 +371,7 @@ export async function registerRoutes(
         null
       );
 
-      editCvAsync(cv.id, prompt, useOriginalDocumentContext).catch(() => {
+      editCvAsync(cv.id, prompt, useOriginalDocumentContext, editTemperature).catch(() => {
         // Failures are handled inside editCvAsync
       });
 
@@ -482,6 +500,26 @@ function cleanModelHtmlResponse(raw: string): string {
     .replace(/```html\s*/gi, "")
     .replace(/```\s*$/g, "")
     .trim();
+}
+
+function clampModelTemperature(value: number): number {
+  if (!Number.isFinite(value)) return DEFAULT_GENERATION_TEMPERATURE;
+  if (value < MODEL_TEMPERATURE_MIN) return MODEL_TEMPERATURE_MIN;
+  if (value > MODEL_TEMPERATURE_MAX) return MODEL_TEMPERATURE_MAX;
+  return Math.round(value * 100) / 100;
+}
+
+function parseModelTemperature(raw: unknown, fallback: number): number {
+  if (typeof raw === "number") {
+    return clampModelTemperature(raw);
+  }
+  if (typeof raw === "string") {
+    const parsed = Number.parseFloat(raw);
+    if (Number.isFinite(parsed)) {
+      return clampModelTemperature(parsed);
+    }
+  }
+  return clampModelTemperature(fallback);
 }
 
 function normalizeDocText(input: string): string {
@@ -665,7 +703,7 @@ ${prompt}`;
       { role: "user", content: moderationPrompt },
     ],
     max_tokens: 512,
-    temperature: 0,
+    temperature: appConfig.ai.validationTemperature,
   });
 
   const rawContent = response.choices[0]?.message?.content || "";
@@ -710,7 +748,8 @@ async function generateCvAsync(
   templateId: number,
   cvText: string,
   sourceInfo?: string,
-  additionalUserPrompt?: string
+  additionalUserPrompt?: string,
+  modelTemperature: number = DEFAULT_GENERATION_TEMPERATURE
 ) {
   try {
     const template = await storage.getTemplate(templateId);
@@ -787,7 +826,7 @@ ${normalizedCvText}`;
           { role: "user", content: generationPrompt },
         ],
         max_tokens: 8192,
-        temperature: 0.1,
+        temperature: clampModelTemperature(modelTemperature),
       });
 
       let generatedHtml = cleanModelHtmlResponse(response.choices[0]?.message?.content || "");
@@ -826,7 +865,12 @@ ${normalizedCvText}`;
   }
 }
 
-async function editCvAsync(cvId: number, userPrompt: string, useOriginalDocumentContext: boolean) {
+async function editCvAsync(
+  cvId: number,
+  userPrompt: string,
+  useOriginalDocumentContext: boolean,
+  modelTemperature: number = DEFAULT_EDIT_TEMPERATURE
+) {
   try {
     const cv = await storage.getGeneratedCv(cvId);
     if (!cv || !cv.htmlContent) {
@@ -873,7 +917,7 @@ ${cv.htmlContent}`;
         { role: "user", content: editPrompt },
       ],
       max_tokens: 8192,
-      temperature: 0.1,
+      temperature: clampModelTemperature(modelTemperature),
     });
 
     let editedHtml = cleanModelHtmlResponse(response.choices[0]?.message?.content || "");

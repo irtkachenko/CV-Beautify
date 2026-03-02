@@ -36,6 +36,7 @@ export default function CvViewPage() {
   const [isAiDialogOpen, setIsAiDialogOpen] = useState(false);
   const [aiPrompt, setAiPrompt] = useState("");
   const [useOriginalDocumentContext, setUseOriginalDocumentContext] = useState(false);
+  const [editTemperature, setEditTemperature] = useState(0.1);
   const [isSubmittingAiEdit, setIsSubmittingAiEdit] = useState(false);
   const [scale, setScale] = useState(1);
   const [iframeHeight, setIframeHeight] = useState("297mm");
@@ -264,6 +265,7 @@ export default function CvViewPage() {
         body: JSON.stringify({
           prompt: trimmedPrompt,
           useOriginalDocumentContext: hasOriginalDocumentContext ? useOriginalDocumentContext : false,
+          temperature: editTemperature,
         }),
       });
 
@@ -329,6 +331,7 @@ export default function CvViewPage() {
 
       setIsAiDialogOpen(false);
       setAiPrompt("");
+      setEditTemperature(0.1);
       toast({
         title: t("cv_view.toasts.ai_edit_started_title"),
         description: t("cv_view.toasts.ai_edit_started_desc"),
@@ -410,6 +413,7 @@ export default function CvViewPage() {
               <button
                 onClick={() => {
                   setUseOriginalDocumentContext(false);
+                  setEditTemperature(0.1);
                   setIsAiDialogOpen(true);
                 }}
                 disabled={!canEditWithAi}
@@ -642,6 +646,23 @@ export default function CvViewPage() {
                     <p className="text-xs text-gray-500">
                       {aiPrompt.length}/{AI_EDIT_PROMPT_MAX_LENGTH}
                     </p>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-medium text-gray-800">{t("cv_view.ai_panel.temperature_label")}</p>
+                      <p className="text-xs text-gray-500">{editTemperature.toFixed(2)}</p>
+                    </div>
+                    <input
+                      type="range"
+                      min={0}
+                      max={2}
+                      step={0.05}
+                      value={editTemperature}
+                      onChange={(e) => setEditTemperature(Number(e.target.value))}
+                      disabled={isSubmittingAiEdit}
+                      className="w-full accent-indigo-600"
+                    />
+                    <p className="text-xs text-gray-500">{t("cv_view.ai_panel.temperature_hint")}</p>
                   </div>
                 </div>
 

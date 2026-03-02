@@ -1,4 +1,5 @@
 import OpenAI from 'openai';
+import { appConfig } from "../config/app-config";
 
 // Configure OpenRouter client
 const openrouter = new OpenAI({
@@ -85,7 +86,7 @@ Respond with JSON only.`;
       model: "meta-llama/llama-3.3-70b-instruct",
       messages: [{ role: "user", content: prompt }],
       max_tokens: 2048,
-      temperature: 0.1, // Lower temperature for more stable JSON
+      temperature: appConfig.ai.validationTemperature,
     });
 
     const content = response.choices[0]?.message?.content || '';

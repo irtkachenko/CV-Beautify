@@ -21,6 +21,7 @@ export function GenerateModal({ template, isOpen, onClose }: GenerateModalProps)
   const [isValidating, setIsValidating] = useState(false);
   const [useGenerationPrompt, setUseGenerationPrompt] = useState(false);
   const [generationPrompt, setGenerationPrompt] = useState("");
+  const [generationTemperature, setGenerationTemperature] = useState(0.1);
 
   const { mutate: generateCv, isPending } = useGenerateCv();
   const [, setLocation] = useLocation();
@@ -29,6 +30,7 @@ export function GenerateModal({ template, isOpen, onClose }: GenerateModalProps)
   const handleClose = () => {
     setUseGenerationPrompt(false);
     setGenerationPrompt("");
+    setGenerationTemperature(0.1);
     onClose();
   };
 
@@ -62,6 +64,7 @@ export function GenerateModal({ template, isOpen, onClose }: GenerateModalProps)
         templateId: template.id,
         file: selectedFile,
         generationPrompt: useGenerationPrompt ? generationPrompt : undefined,
+        temperature: generationTemperature,
       }, {
         onSuccess: (response) => {
           toast({
@@ -210,6 +213,24 @@ export function GenerateModal({ template, isOpen, onClose }: GenerateModalProps)
                     className="w-full min-h-[90px] max-h-[180px] resize-y rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-primary/30"
                   />
                 )}
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-medium text-foreground">{t("modal.temperature_label")}</p>
+                  <p className="text-xs text-muted-foreground">{generationTemperature.toFixed(2)}</p>
+                </div>
+                <input
+                  type="range"
+                  min={0}
+                  max={2}
+                  step={0.05}
+                  value={generationTemperature}
+                  onChange={(e) => setGenerationTemperature(Number(e.target.value))}
+                  disabled={isPending}
+                  className="w-full accent-primary"
+                />
+                <p className="text-xs text-muted-foreground">{t("modal.temperature_hint")}</p>
               </div>
 
               <div className="pt-2 sm:pt-4">

@@ -100,7 +100,9 @@ const resources = {
                 "error_no_template_desc": "Please select a template to generate your CV.",
                 "use_generation_prompt_label": "Add generation preferences",
                 "use_generation_prompt_hint": "Enable to describe extra wishes for the initial CV generation.",
-                "generation_prompt_placeholder": "Example: keep tone concise, prioritize achievements, and make skills section more compact."
+                "generation_prompt_placeholder": "Example: keep tone concise, prioritize achievements, and make skills section more compact.",
+                "temperature_label": "Model temperature",
+                "temperature_hint": "Lower values are more deterministic, higher values are more creative."
             },
             "cv_view": {
                 "title": "CV Viewer",
@@ -163,6 +165,8 @@ const resources = {
                     "close_aria": "Close AI edit panel",
                     "placeholder": "Example: Rewrite the summary into 2 concise sentences and highlight React + TypeScript achievements.",
                     "hint": "The request should be specific and factual to get visible changes.",
+                    "temperature_label": "Model temperature",
+                    "temperature_hint": "Lower values are more deterministic, higher values are more creative.",
                     "use_original_context_label": "Use original document context",
                     "use_original_context_hint": "Add extracted text and links from the original DOCX as factual context for this edit.",
                     "use_original_context_unavailable": "Original document context is unavailable for this CV."
@@ -347,6 +351,8 @@ const resources = {
                     "close_aria": "Закрити панель редагування ШІ",
                     "placeholder": "Приклад: Перепиши summary у 2 короткі речення та підкресли досягнення в React + TypeScript.",
                     "hint": "Запит має бути конкретним і фактичним, щоб зміни були помітні.",
+                    "temperature_label": "Температура моделі",
+                    "temperature_hint": "Нижчі значення дають стабільніший результат, вищі — креативніший.",
                     "use_original_context_label": "Використовувати контекст оригінального документа",
                     "use_original_context_hint": "Додати витягнутий текст і лінки з оригінального DOCX як фактичний контекст.",
                     "use_original_context_unavailable": "Контекст оригінального документа недоступний для цього CV."
@@ -372,7 +378,9 @@ const resources = {
                 "error_no_template_desc": "Будь ласка, виберіть шаблон для створення вашого резюме.",
                 "use_generation_prompt_label": "Додати побажання до генерації",
                 "use_generation_prompt_hint": "Увімкніть, щоб вказати додаткові побажання для первинної генерації CV.",
-                "generation_prompt_placeholder": "Приклад: зроби стиль лаконічним, акцентуй досягнення і скороти блок навичок."
+                "generation_prompt_placeholder": "Приклад: зроби стиль лаконічним, акцентуй досягнення і скороти блок навичок.",
+                "temperature_label": "Температура моделі",
+                "temperature_hint": "Нижчі значення дають стабільніший результат, вищі — креативніший."
             },
             "toast": {
                 "gen_started_title": "Генерацію розпочато! 🎉",
