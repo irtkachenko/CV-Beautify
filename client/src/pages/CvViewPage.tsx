@@ -10,6 +10,7 @@ import { usePollingJob } from "@/hooks/use-generate";
 import { useQueryClient } from "@tanstack/react-query";
 import { Textarea } from "@/components/ui/textarea";
 import { useTranslation } from "react-i18next";
+import { DEFAULT_EDIT_TEMPERATURE, MODEL_TEMPERATURE_MAX, MODEL_TEMPERATURE_MIN } from "@shared/config";
 
 const AI_EDIT_PROMPT_MIN_LENGTH = 10;
 const AI_EDIT_PROMPT_MAX_LENGTH = 1000;
@@ -36,7 +37,7 @@ export default function CvViewPage() {
   const [isAiDialogOpen, setIsAiDialogOpen] = useState(false);
   const [aiPrompt, setAiPrompt] = useState("");
   const [useOriginalDocumentContext, setUseOriginalDocumentContext] = useState(false);
-  const [editTemperature, setEditTemperature] = useState(0.1);
+  const [editTemperature, setEditTemperature] = useState(DEFAULT_EDIT_TEMPERATURE);
   const [isSubmittingAiEdit, setIsSubmittingAiEdit] = useState(false);
   const [scale, setScale] = useState(1);
   const [iframeHeight, setIframeHeight] = useState("297mm");
@@ -331,7 +332,7 @@ export default function CvViewPage() {
 
       setIsAiDialogOpen(false);
       setAiPrompt("");
-      setEditTemperature(0.1);
+      setEditTemperature(DEFAULT_EDIT_TEMPERATURE);
       toast({
         title: t("cv_view.toasts.ai_edit_started_title"),
         description: t("cv_view.toasts.ai_edit_started_desc"),
@@ -413,7 +414,7 @@ export default function CvViewPage() {
               <button
                 onClick={() => {
                   setUseOriginalDocumentContext(false);
-                  setEditTemperature(0.1);
+                  setEditTemperature(DEFAULT_EDIT_TEMPERATURE);
                   setIsAiDialogOpen(true);
                 }}
                 disabled={!canEditWithAi}
@@ -654,8 +655,8 @@ export default function CvViewPage() {
                     </div>
                     <input
                       type="range"
-                      min={0}
-                      max={2}
+                      min={MODEL_TEMPERATURE_MIN}
+                      max={MODEL_TEMPERATURE_MAX}
                       step={0.05}
                       value={editTemperature}
                       onChange={(e) => setEditTemperature(Number(e.target.value))}

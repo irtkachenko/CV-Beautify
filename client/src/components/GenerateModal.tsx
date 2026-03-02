@@ -6,6 +6,7 @@ import { useGenerateCv } from "@/hooks/use-generate";
 import { useToast } from "@/hooks/use-toast";
 import { Dropzone } from "@/components/ui/dropzone";
 import type { CvTemplate } from "@shared/routes";
+import { DEFAULT_GENERATION_TEMPERATURE, MODEL_TEMPERATURE_MAX, MODEL_TEMPERATURE_MIN } from "@shared/config";
 import { useTranslation } from "react-i18next";
 
 interface GenerateModalProps {
@@ -21,7 +22,7 @@ export function GenerateModal({ template, isOpen, onClose }: GenerateModalProps)
   const [isValidating, setIsValidating] = useState(false);
   const [useGenerationPrompt, setUseGenerationPrompt] = useState(false);
   const [generationPrompt, setGenerationPrompt] = useState("");
-  const [generationTemperature, setGenerationTemperature] = useState(0.1);
+  const [generationTemperature, setGenerationTemperature] = useState(DEFAULT_GENERATION_TEMPERATURE);
 
   const { mutate: generateCv, isPending } = useGenerateCv();
   const [, setLocation] = useLocation();
@@ -30,7 +31,7 @@ export function GenerateModal({ template, isOpen, onClose }: GenerateModalProps)
   const handleClose = () => {
     setUseGenerationPrompt(false);
     setGenerationPrompt("");
-    setGenerationTemperature(0.1);
+    setGenerationTemperature(DEFAULT_GENERATION_TEMPERATURE);
     onClose();
   };
 
@@ -146,16 +147,17 @@ export function GenerateModal({ template, isOpen, onClose }: GenerateModalProps)
           </div>
 
           {/* Right: Form */}
-          <div className="w-full md:w-3/5 p-4 sm:p-6 lg:p-8 flex flex-col justify-center overflow-y-auto max-h-[58vh] md:max-h-[85vh]">
-            <div className="mb-6 sm:mb-8">
-              <h2 className="font-display font-bold text-lg sm:text-xl lg:text-2xl mb-2 text-foreground">{t("modal.import_content")}</h2>
-              <p className="text-muted-foreground text-sm">
-                <span className="hidden sm:inline">{t("modal.description")}</span>
-                <span className="sm:hidden">{t("modal.description_mobile")}</span>
-              </p>
-            </div>
+          <div className="w-full md:w-3/5 p-4 sm:p-6 lg:p-8 flex flex-col max-h-[58vh] md:max-h-[85vh]">
+            <div className="flex-1 overflow-y-auto pr-2">
+              <div className="mb-6 sm:mb-8">
+                <h2 className="font-display font-bold text-lg sm:text-xl lg:text-2xl mb-2 text-foreground">{t("modal.import_content")}</h2>
+                <p className="text-muted-foreground text-sm">
+                  <span className="hidden sm:inline">{t("modal.description")}</span>
+                  <span className="sm:hidden">{t("modal.description_mobile")}</span>
+                </p>
+              </div>
 
-            <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
+              <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
               <div className="space-y-2">
                 <label htmlFor="file-upload" className="block text-sm font-medium text-foreground">
                   {t("modal.upload_label")}
@@ -222,8 +224,8 @@ export function GenerateModal({ template, isOpen, onClose }: GenerateModalProps)
                 </div>
                 <input
                   type="range"
-                  min={0}
-                  max={2}
+                  min={MODEL_TEMPERATURE_MIN}
+                  max={MODEL_TEMPERATURE_MAX}
                   step={0.05}
                   value={generationTemperature}
                   onChange={(e) => setGenerationTemperature(Number(e.target.value))}
@@ -256,7 +258,8 @@ export function GenerateModal({ template, isOpen, onClose }: GenerateModalProps)
                   )}
                 </button>
               </div>
-            </form>
+              </form>
+            </div>
           </div>
         </motion.div>
       </div>

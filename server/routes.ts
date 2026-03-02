@@ -2,6 +2,12 @@ import type { Express } from "express";
 import type { Server } from "http";
 import { storage } from "./storage";
 import { api, buildUrl } from "@shared/routes";
+import {
+  MODEL_TEMPERATURE_MIN,
+  MODEL_TEMPERATURE_MAX,
+  DEFAULT_GENERATION_TEMPERATURE,
+  DEFAULT_EDIT_TEMPERATURE,
+} from "@shared/config";
 import type { OriginalDocLink } from "@shared/schema";
 import { z } from "zod";
 import { setupAuth, registerAuthRoutes, isAuthenticated } from "./replit_integrations/auth";
@@ -42,10 +48,6 @@ const AI_MODEL = "meta-llama/llama-3.3-70b-instruct";
 const AI_EDIT_PROMPT_MIN_LENGTH = 10;
 const AI_EDIT_PROMPT_MAX_LENGTH = 1000;
 const GENERATION_PROMPT_MAX_LENGTH = 600;
-const MODEL_TEMPERATURE_MIN = 0;
-const MODEL_TEMPERATURE_MAX = 2;
-const DEFAULT_GENERATION_TEMPERATURE = 0.1;
-const DEFAULT_EDIT_TEMPERATURE = 0.1;
 const MAX_GENERATED_HTML_CHARS = appConfig.html.maxGeneratedHtmlChars;
 const MAX_ORIGINAL_DOC_TEXT_CHARS = 200_000;
 const MAX_ORIGINAL_CONTEXT_PROMPT_CHARS = 25_000;
