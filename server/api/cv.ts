@@ -359,13 +359,24 @@ export function registerCvRoutes(app: Express) {
         return res.status(404).json({ message: "Generated CV HTML not found" });
       }
 
+      logger.info('Rendering CV', { cvId: id, htmlLength: cv.htmlContent?.length });
+      
       const safeHtml = sanitizeHtmlContent(cv.htmlContent);
+      
+      logger.info('Sanitized HTML', { sanitizedLength: safeHtml?.length });
       
       // Additional security validation
       const securityValidation = validateSecurity(safeHtml);
       if (!securityValidation.isValid) {
+        logger.warn('Security validation failed', { 
+          cvId: id, 
+          pattern: securityValidation.pattern?.source,
+          htmlLength: safeHtml?.length 
+        });
         return res.status(500).json({ message: "Generated HTML failed security validation" });
       }
+
+      logger.info('Sending CV render response', { cvId: id, responseLength: safeHtml?.length });
 
       res.setHeader("Content-Type", "text/html");
       res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
@@ -374,6 +385,11 @@ export function registerCvRoutes(app: Express) {
       // CSP handled globally by security middleware
       res.send(safeHtml);
     } catch (error) {
+      logger.error('CV render error', { 
+        cvId: req.params.id,
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined
+      });
       res.status(500).json({ message: "Failed to render CV" });
     }
   });
