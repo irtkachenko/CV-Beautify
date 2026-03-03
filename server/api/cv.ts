@@ -373,11 +373,7 @@ export function registerCvRoutes(app: Express) {
         /\son[a-z0-9_-]+\s*=/i,
         /javascript:/i,
         /vbscript:/i,
-        /<iframe\b/i,
-        /<object\b/i,
-        /<embed\b/i,
-        /<form\b/i,
-        /<meta[^>]*http-equiv=["']?refresh/i,
+        // iframe, object, embed, form, meta handled by CSP globally
       ];
 
       for (const pattern of blockedPatterns) {
@@ -390,10 +386,7 @@ export function registerCvRoutes(app: Express) {
       res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
       res.setHeader("Pragma", "no-cache");
       res.setHeader("Expires", "0");
-      res.setHeader(
-        "Content-Security-Policy",
-        "default-src 'self' data:; script-src 'none'; object-src 'none'; frame-src 'none'; frame-ancestors 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: https:;"
-      );
+      // CSP handled globally by security middleware
       res.send(safeHtml);
     } catch (error) {
       res.status(500).json({ message: "Failed to render CV" });
