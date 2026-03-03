@@ -9,6 +9,9 @@ interface AuthRequest extends Request {
   };
 }
 import { storage } from "../storage";
+import { logger } from "../services/logger-service";
+import { sanitizeHtmlContent } from "../middleware/input-sanitizer";
+import { validateSecurity, validateFieldLength, sanitizeContent } from "../services/security-validation";
 import { api } from "@shared/routes";
 import { appConfig } from "../config/app-config";
 import { z } from "zod";
@@ -45,7 +48,6 @@ import {
   FileProcessingError,
   asyncHandler
 } from "../middleware/error-handler";
-import { sanitizeHtmlContent } from "../middleware/input-sanitizer";
 
 const MAX_ORIGINAL_DOC_TEXT_CHARS = 200_000;
 
@@ -359,27 +361,10 @@ export function registerCvRoutes(app: Express) {
 
       const safeHtml = sanitizeHtmlContent(cv.htmlContent);
       
-      // Security assertions from cv-service
-      if (!safeHtml || !safeHtml.trim()) {
-        return res.status(500).json({ message: "Generated HTML is empty" });
-      }
-
-      if (safeHtml.length > 500_000) {
-        return res.status(500).json({ message: "Generated HTML exceeds maximum allowed size" });
-      }
-
-      const blockedPatterns = [
-        /<script\b/i,
-        /\son[a-z0-9_-]+\s*=/i,
-        /javascript:/i,
-        /vbscript:/i,
-        // iframe, object, embed, form, meta handled by CSP globally
-      ];
-
-      for (const pattern of blockedPatterns) {
-        if (pattern.test(safeHtml)) {
-          return res.status(500).json({ message: "Generated HTML failed security validation" });
-        }
+      // Additional security validation
+      const securityValidation = validateSecurity(safeHtml);
+      if (!securityValidation.isValid) {
+        return res.status(500).json({ message: "Generated HTML failed security validation" });
       }
 
       res.setHeader("Content-Type", "text/html");

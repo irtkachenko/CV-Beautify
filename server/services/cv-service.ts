@@ -1,12 +1,13 @@
 import OpenAI from 'openai';
 import { storage } from "../storage";
 import { db } from "../db";
-import { api, buildUrl } from "@shared/routes";
-import { appConfig } from "../config/app-config";
 import { createLogger } from "./logger-service";
+import { validateSecurity, XSS_PATTERNS, HTML_PATTERNS } from "./security-validation";
+import { appConfig } from "../config/app-config";
 import type { OriginalDocLink } from "@shared/schema";
 import { z } from "zod";
 import { sanitizeHtmlContent } from "../middleware/input-sanitizer";
+import { api, buildUrl } from "@shared/routes";
 import fs from "fs/promises";
 import fsSync from "fs";
 import path from "path";
@@ -130,22 +131,10 @@ function assertSafeGeneratedHtml(html: string) {
     throw new Error("Generated HTML exceeds maximum allowed size");
   }
 
-  const blockedPatterns = [
-    /<script\b/i,
-    /\son[a-z0-9_-]+\s*=/i,
-    /javascript:/i,
-    /vbscript:/i,
-    /<iframe\b/i,
-    /<object\b/i,
-    /<embed\b/i,
-    /<form\b/i,
-    /<meta[^>]*http-equiv=["']?refresh/i,
-  ];
-
-  for (const pattern of blockedPatterns) {
-    if (pattern.test(html)) {
-      throw new Error("Generated HTML failed security validation");
-    }
+  // Use centralized security validation
+  const securityValidation = validateSecurity(html);
+  if (!securityValidation.isValid) {
+    throw new Error("Generated HTML failed security validation");
   }
 }
 
@@ -179,7 +168,7 @@ function runLocalPromptSafetyChecks(prompt: string): PromptSafetyResult {
       userMessage: "Your request was rejected due to unsafe prompt-extraction instructions.",
     },
     {
-      pattern: /(<script|<\/script>|javascript:|on\w+\s*=|<iframe|<object|<embed|<form)/i,
+      pattern: new RegExp(`(${XSS_PATTERNS.map(p => p.source).join('|')})`, 'i'),
       reason: "script_injection",
       userMessage: "Your request was rejected due to potential code injection.",
     },
