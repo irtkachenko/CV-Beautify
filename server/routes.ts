@@ -196,6 +196,7 @@ export async function registerRoutes(
         progress: userFriendlyStatus,
         originalDocText,
         originalDocLinks,
+        name: req.file.originalname,
       });
 
       // 3. Start async generation

@@ -33,6 +33,7 @@ export const generatedCvs = pgTable("generated_cvs", {
   htmlContent: text("html_content"), // Generated HTML content stored in DB
   originalDocText: text("original_doc_text"), // Extracted plain text from source DOCX
   originalDocLinks: jsonb("original_doc_links").$type<OriginalDocLink[]>(), // Sanitized links extracted from DOCX
+  name: text("name"), // Name of the generated CV (from original filename)
   errorMessage: text("error_message"),
   createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
   updatedAt: timestamp("updated_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
@@ -85,5 +86,6 @@ export interface JobStatusResponse {
   pdfUrl?: string;
   htmlContent?: string;
   errorMessage?: string;
+  name?: string;
   template?: CvTemplate;
 }

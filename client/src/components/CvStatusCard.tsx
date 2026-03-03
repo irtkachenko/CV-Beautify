@@ -72,7 +72,8 @@ export function CvStatusCard({ cv }: { cv: GeneratedCvResponse }) {
   };
 
   const templateScreenshot = displayData.template?.screenshotUrl || cv.template?.screenshotUrl;
-  const templateName = displayData.template?.name || cv.template?.name || t("common.template");
+  const cvName = displayData.name || cv.name;
+  const displayName = cvName || displayData.template?.name || cv.template?.name || t("common.template");
 
   // Scale calculation for iframe
   useEffect(() => {
@@ -232,7 +233,7 @@ export function CvStatusCard({ cv }: { cv: GeneratedCvResponse }) {
             ) : templateScreenshot ? (
               <img
                 src={templateScreenshot}
-                alt={templateName}
+                alt={displayName}
                 className={`w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 ${isProcessing ? 'opacity-30 grayscale' : ''}`}
                 onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
                   e.currentTarget.src = 'https://images.unsplash.com/photo-1586281380349-632531db7ed4?w=400&q=80'
@@ -284,7 +285,7 @@ export function CvStatusCard({ cv }: { cv: GeneratedCvResponse }) {
           <div className="p-4 lg:p-5 h-[110px] lg:h-[110px] flex flex-col justify-between bg-card">
             <div>
               <div className="flex justify-between items-start mb-2">
-                <h3 className="font-display font-bold text-foreground line-clamp-1">{templateName}</h3>
+                <h3 className="font-display font-bold text-foreground line-clamp-1">{displayName}</h3>
                 {/* Status Badge */}
                 <div className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${isProcessing ? 'bg-amber-500/10 text-amber-600 border border-amber-500/20' :
                   isComplete ? 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20' :
