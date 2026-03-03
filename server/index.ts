@@ -42,9 +42,9 @@ app.use("/api", apiLimiter);
 // Security headers middleware
 app.use(getSecurityMiddleware());
 
-// Input sanitization middleware
-app.use(inputSanitizerMiddleware);
-app.use(htmlSanitizerMiddleware);
+// Input sanitization middleware (only for API)
+app.use("/api", inputSanitizerMiddleware);
+app.use("/api", htmlSanitizerMiddleware);
 
 app.use((req, res, next) => {
   const start = Date.now();
