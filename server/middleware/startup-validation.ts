@@ -36,7 +36,7 @@ export class StartupValidator {
       await this.validateSecurity(result);
 
       // 5. Валідація продуктивності
-      await this.validatePerformance(result);
+      await StartupValidator.validatePerformance(result);
 
       // Якщо є критичні проблеми, помічаємо як невдачу
       if (result.issues.length > 0) {
@@ -74,7 +74,7 @@ export class StartupValidator {
   private static async validateServices(result: StartupValidationResult): Promise<void> {
     // Валідація бази даних
     try {
-      const { db } = require("../db");
+      const { db } = await import("../db");
       await db.execute('SELECT 1');
       logger.info("Database connection validated");
     } catch (error) {
@@ -106,9 +106,10 @@ export class StartupValidator {
 
     // Перевірка доступного місця на диску (базова)
     try {
-      const fs = require('fs');
+      const fs = await import('fs');
+      const os = await import('os');
       const stats = fs.statSync('.');
-      const freeSpace = require('os').freemem();
+      const freeSpace = os.freemem();
       
       if (freeSpace < 100 * 1024 * 1024) { // 100MB
         result.warnings.push("Low available system memory");
@@ -157,8 +158,13 @@ export class StartupValidator {
     }
 
     // Перевірка worker threads
-    if (typeof require('worker_threads').isMainThread === 'undefined') {
-      result.warnings.push("Worker threads may not be available");
+    try {
+      const { isMainThread } = await import('worker_threads');
+      if (typeof isMainThread === 'undefined') {
+        result.warnings.push("Worker threads may not be available");
+      }
+    } catch (error) {
+      result.warnings.push("Worker threads module not available");
     }
 
     logger.info("Performance validation completed", {
