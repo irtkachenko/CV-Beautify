@@ -452,6 +452,12 @@ export async function registerRoutes(
 
 // === HELPER FUNCTIONS ===
 
+// Function to extract title from HTML template
+function extractTemplateTitle(htmlContent: string): string {
+  const titleMatch = htmlContent.match(/<title[^>]*>([^<]+)<\/title>/i);
+  return titleMatch ? titleMatch[1].trim() : 'Untitled Template';
+}
+
 async function seedTemplates() {
   const existing = await storage.getTemplates();
   console.log('Template synchronization: checking templates...');
@@ -463,13 +469,18 @@ async function seedTemplates() {
   const templates = templateFiles.map((fileName) => {
     const templateNumber = fileName.replace('.html', '');
     const templateId = parseInt(templateNumber.split('-')[1]); // Extract number from template-X
+    
+    // Read HTML content to extract title
+    const templatePath = path.join(templatesDir, fileName);
+    const htmlContent = fsSync.readFileSync(templatePath, 'utf-8');
+    const templateTitle = extractTemplateTitle(htmlContent);
 
     return {
       id: templateId,
-      name: `Template ${templateId}`,
+      name: templateTitle,
       fileName: fileName, // Use actual filename without hash
       screenshotUrl: `/images/templates/${fileName.replace('.html', '.png')}`,
-      description: `Template ${templateId} description`
+      description: `${templateTitle} description`
     };
   });
 
