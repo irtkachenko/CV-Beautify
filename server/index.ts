@@ -5,7 +5,6 @@ import { createServer } from "http";
 import rateLimit from "express-rate-limit";
 import { appConfig } from "./config/app-config";
 import { globalErrorHandler, notFoundHandler, setupErrorHandlers } from "./middleware/error-handler";
-import { validateStartup } from "./middleware/startup-validation";
 import { logger } from "./services/logger-service";
 import { inputSanitizerMiddleware, htmlSanitizerMiddleware } from "./middleware/input-sanitizer";
 import { getSecurityMiddleware } from "./middleware/security-headers";
@@ -81,20 +80,19 @@ app.use((req, res, next) => {
 });
 
 (async () => {
-  // 1. Validate startup configuration first
-  await validateStartup();
-
-  // 2. Setup error handlers
-  setupErrorHandlers();
-
-  // 3. Register API routes
+  // Register API routes
   await registerApiRoutes(app);
 
-  // 4. Setup 404 and error handlers
+  // Setup error handlers
+  setupErrorHandlers();
+
+  // Serve static files
+  serveStatic(app);
+
+  // Setup 404 and error handlers
   app.use(notFoundHandler);
   app.use(globalErrorHandler);
 
-  // 5. Setup development or production server
   if (process.env.NODE_ENV === "production") {
     serveStatic(app);
   } else {

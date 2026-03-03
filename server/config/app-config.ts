@@ -1,5 +1,3 @@
-import { configValidator } from "./config-validator";
-
 function parsePositiveInt(value: string | undefined, fallback: number): number {
   if (!value) return fallback;
   const parsed = Number.parseInt(value, 10);

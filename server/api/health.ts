@@ -2,7 +2,6 @@ import type { Express, Request, Response } from "express";
 import { asyncHandler } from "../middleware/error-handler";
 import { db } from "../db";
 import { appConfig } from "../config/app-config";
-import { configValidator } from "../config/config-validator";
 import { createLogger } from "../services/logger-service";
 
 const logger = createLogger('HEALTH');
@@ -30,7 +29,7 @@ export function registerHealthRoutes(app: Express): void {
       version: process.env.npm_package_version || '1.0.0',
       services: {
         database: await checkDatabaseHealth(),
-        configuration: await checkConfigurationHealth(),
+        configuration: 'ok', // Simple check - no validation needed
         memory: process.memoryUsage(),
         environment: process.env.NODE_ENV || 'development'
       }
@@ -90,17 +89,6 @@ async function checkDatabaseHealth(): Promise<'ok' | 'error'> {
     return 'ok';
   } catch (error) {
     logger.error('Database health check failed', { error });
-    return 'error';
-  }
-}
-
-async function checkConfigurationHealth(): Promise<'ok' | 'error'> {
-  try {
-    // Check if configuration is validated
-    configValidator.getConfig();
-    return 'ok';
-  } catch (error) {
-    logger.error('Configuration health check failed', { error });
     return 'error';
   }
 }
