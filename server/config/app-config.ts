@@ -1,22 +1,5 @@
-function parsePositiveInt(value: string | undefined, fallback: number): number {
-  if (!value) return fallback;
-  const parsed = Number.parseInt(value, 10);
-  if (!Number.isFinite(parsed) || parsed <= 0) return fallback;
-  return parsed;
-}
-
-function parseBoundedFloat(
-  value: string | undefined,
-  fallback: number,
-  min: number,
-  max: number
-): number {
-  if (!value) return fallback;
-  const parsed = Number.parseFloat(value);
-  if (!Number.isFinite(parsed)) return fallback;
-  if (parsed < min || parsed > max) return fallback;
-  return parsed;
-}
+import { promptsConfig } from './prompts-config';
+import { parsePositiveInt, parseBoundedFloat } from '../utils/config-utils';
 
 export const appConfig = {
   rateLimits: {
@@ -56,4 +39,5 @@ export const appConfig = {
     maxLinkHrefLength: 2048,
     maxLinksCount: 200,
   },
+  prompts: promptsConfig,
 };

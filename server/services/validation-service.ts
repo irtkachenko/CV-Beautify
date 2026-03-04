@@ -1,5 +1,6 @@
 import OpenAI from 'openai';
 import { appConfig } from "../config/app-config";
+import { replacePromptPlaceholders } from "../utils/prompt-utils";
 
 // Configure OpenRouter client
 const openrouter = new OpenAI({
@@ -45,42 +46,9 @@ export async function validateCVContent(cvText: string): Promise<ValidationResul
     }
 
     const languageName = 'English';
-    const prompt = `You are a professional CV analyzer. Your goal is to determine if the provided text looks like a CV or contains information that can be used to generate a CV.
-
-CV TEXT TO ANALYZE:
-"""
-${cvText}
-"""
-
-VALIDATION RULES:
-1. "isValid" should be TRUE only if the text contains actual, meaningful professional information with real values: real names, real contact details, actual skills listed, real work experience entries, or real education records.
-2. "isValid" should be FALSE if the text:
-   - Has correct CV structure/fields/sections but all or most fields are empty, placeholder, or blank (e.g., "Name: ", "Skills: ", "Experience: " with no actual data)
-   - Contains only section headers or labels without any real content
-   - Is completely random chars (gibberish)
-   - Is extremely offensive or inappropriate
-   - Is a completely different type of document (e.g., cooking recipe, fictional story, technical manual) with NO personal info
-3. Be strict about content presence: structure alone does not make a CV valid — there must be actual data filled in.
-4. If it looks like a rough draft of a CV with at least some real information filled in, it IS valid.
-
-RESPONSE FORMAT (Return ONLY a raw JSON object):
-{
-  "isValid": boolean,
-  "quality": "excellent" | "good" | "fair" | "poor",
-  "confidence": number,
-  "message": "Simple explanation in English",
-  "suggestions": ["suggestion in English"],
-  "issues": [
-    {
-      "type": "missing_info" | "quality_issue" | "inappropriate_content",
-      "severity": "low" | "medium" | "high",
-      "description": "Short description in English",
-      "suggestion": "How to fix in English"
-    }
-  ]
-}
-
-Respond with JSON only.`;
+    const prompt = replacePromptPlaceholders(appConfig.prompts.cvValidation.systemPrompt, {
+      cvText
+    });
 
     const response = await openrouter.chat.completions.create({
       model: "meta-llama/llama-3.3-70b-instruct",
