@@ -1,4 +1,6 @@
 import { Router } from "express";
+import https from "node:https";
+import http from "node:http";
 
 const router = Router();
 
@@ -24,25 +26,22 @@ router.get("/html2pdf.js", async (req, res) => {
     
     const url = "https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js";
     
-    // Use Node.js https module instead of fetch
-    const https = require('https');
-    const http = require('http');
-    
+    // Use Node.js built-in modules with node: prefix
     const client = url.startsWith('https:') ? https : http;
     
     client.get(url, (response: any) => {
       console.log(`Response status: ${response.statusCode}`);
       console.log(`Content-Type: ${response.headers['content-type']}`);
-      
+       
       if (response.statusCode !== 200) {
         throw new Error(`Failed to fetch script: ${response.statusCode}`);
       }
-      
+       
       let data = '';
       response.on('data', (chunk: any) => {
         data += chunk;
       });
-      
+       
       response.on('end', () => {
         // Cache the script
         cachedScript = data;
