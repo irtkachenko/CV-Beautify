@@ -5,10 +5,6 @@ import viteConfig from "../vite.config";
 import fs from "fs";
 import path from "path";
 import { nanoid } from "nanoid";
-import { fileURLToPath } from "url";
-
-// Отримуємо __dirname для CommonJS
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const viteLogger = createLogger();
 
@@ -39,10 +35,9 @@ export async function setupVite(server: Server, app: Express) {
     const url = req.originalUrl;
 
     try {
-      // Використовуємо __dirname замість import.meta.dirname для CommonJS
+      // Використовуємо process.cwd() для надійного визначення шляху
       const clientTemplate = path.resolve(
-        __dirname,
-        "..",
+        process.cwd(),
         "client",
         "index.html",
       );
