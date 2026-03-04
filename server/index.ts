@@ -8,6 +8,8 @@ import { globalErrorHandler, notFoundHandler, setupErrorHandlers } from "./middl
 import { logger } from "./services/logger-service";
 import { inputSanitizerMiddleware, htmlSanitizerMiddleware } from "./middleware/input-sanitizer";
 import { getSecurityMiddleware } from "./middleware/security-headers";
+import { scriptsRateLimit } from "./middleware/scripts-rate-limit";
+import proxyRouter from "./api/proxy";
 
 const app = express();
 const httpServer = createServer(app);
@@ -38,6 +40,9 @@ const apiLimiter = rateLimit({
 });
 
 app.use("/api", apiLimiter);
+
+// Static proxy routes with dedicated rate limiting (before auth)
+app.use("/scripts", scriptsRateLimit, proxyRouter);
 
 // Security headers middleware
 app.use(getSecurityMiddleware());

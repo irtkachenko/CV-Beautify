@@ -331,7 +331,7 @@ export async function generatePdfFromUrl(options: PdfFromUrlOptions): Promise<vo
   const iframeDoc = iframe.contentDocument!;
   iframeDoc.open();
   iframeDoc.write(`<!DOCTYPE html><html><head>
-    <script src="/api/proxy/html2pdf.js"></script>
+    <script src="/scripts/html2pdf.js"></script>
     <style>html,body{margin:0;padding:0;}</style>
   </head><body>${html}</body></html>`);
   iframeDoc.close();
