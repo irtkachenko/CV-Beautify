@@ -45,13 +45,13 @@ export function useDeleteResume() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [api.resumes.list.path] });
       toast({
-        title: i18n.t("toast.resume_deleted_title") || "Resume Deleted",
-        description: i18n.t("toast.resume_deleted_desc") || "Your generated CV has been removed.",
+        title: i18n.t("toast.cv_deleted_title") || "Resume Deleted",
+        description: i18n.t("toast.cv_deleted_desc") || "Your generated CV has been removed.",
       });
     },
     onError: (error) => {
       toast({
-        title: i18n.t("toast.deletion_failed_title") || "Deletion Failed",
+        title: i18n.t("toast.delete_failed_title") || "Deletion Failed",
         description: error.message,
         variant: "destructive",
       });
