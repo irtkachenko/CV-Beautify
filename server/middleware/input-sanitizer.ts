@@ -12,7 +12,7 @@ const window = new JSDOM('').window;
 // Ініціалізуємо DOMPurify з DOM середовищем
 const purify = DOMPurify(window);
 
-// Конфігурація DOMPurify для максимальної безпеки
+// Конфігурація DOMPurify для максимальної безпеки (для user input)
 const purifyConfig = {
   ALLOWED_TAGS: [
     'p', 'br', 'strong', 'em', 'i', 'u', 'b', 'span',
@@ -28,8 +28,32 @@ const purifyConfig = {
   ALLOW_DATA_ATTR: false,
   FORBID_TAGS: ['script', 'object', 'embed', 'iframe', 'form', 'input'],
   FORBID_ATTR: ['onclick', 'onload', 'onerror', 'onmouseover', 'onfocus'],
-  SANITIZE_DOM: true,
-  SANITIZE_NAMED_PROPS: true,
+  SANITIZE_DOM: false,
+  SANITIZE_NAMED_PROPS: false,
+  KEEP_CONTENT: true,
+  RETURN_DOM: false,
+  RETURN_DOM_FRAGMENT: false
+};
+
+// Конфігурація DOMPurify для CV контенту (зберігає стилі)
+const cvPurifyConfig = {
+  ALLOWED_TAGS: [
+    'p', 'br', 'strong', 'em', 'i', 'u', 'b', 'span',
+    'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+    'ul', 'ol', 'li', 'blockquote', 'code', 'pre',
+    'div', 'section', 'article', 'header', 'footer',
+    'table', 'thead', 'tbody', 'tr', 'th', 'td',
+    'style' // Дозволяємо style теги для CV
+  ],
+  ALLOWED_ATTR: [
+    'class', 'id', 'style', 'href', 'target', 'rel',
+    'colspan', 'rowspan', 'align', 'valign'
+  ],
+  ALLOW_DATA_ATTR: false,
+  FORBID_TAGS: ['script', 'object', 'embed', 'iframe', 'form', 'input'],
+  FORBID_ATTR: ['onclick', 'onload', 'onerror', 'onmouseover', 'onfocus'],
+  SANITIZE_DOM: false,
+  SANITIZE_NAMED_PROPS: false,
   KEEP_CONTENT: true,
   RETURN_DOM: false,
   RETURN_DOM_FRAGMENT: false
@@ -48,6 +72,34 @@ function sanitizeWithDOMPurify(dirty: string): string {
   }
   
   return purify.sanitize(dirty, purifyConfig);
+}
+
+// Функція санітизації для CV контенту (видаляє тільки скрипти)
+function sanitizeCvContent(dirty: string): string {
+  if (!dirty || typeof dirty !== 'string') {
+    return dirty;
+  }
+  
+  // Видаляємо тільки скрипти та небезпечні атрибути
+  const tempDiv = window.document.createElement('div');
+  tempDiv.innerHTML = dirty;
+  
+  // Видаляємо тільки скрипти
+  const scripts = tempDiv.querySelectorAll('script');
+  scripts.forEach(tag => tag.remove());
+  
+  // Видаляємо тільки небезпечні атрибути
+  const dangerousAttrs = ['onclick', 'onload', 'onerror', 'onmouseover', 'onfocus'];
+  const allElements = tempDiv.querySelectorAll('*');
+  allElements.forEach(element => {
+    dangerousAttrs.forEach(attr => {
+      if (element.hasAttribute(attr)) {
+        element.removeAttribute(attr);
+      }
+    });
+  });
+  
+  return tempDiv.innerHTML;
 }
 
 // Санітизація рядкових полів з додатковою валідацією
@@ -211,7 +263,7 @@ export const htmlSanitizerMiddleware = (
 
 // Допоміжні функції для використання в сервісах
 export const sanitizeField = (value: string): string => sanitizeString(value);
-export const sanitizeHtmlContent = (html: string): string => sanitizeWithDOMPurify(html);
+export const sanitizeHtmlContent = (html: string): string => sanitizeCvContent(html);
 
 // Функція для валідації HTML контенту
 export function validateHTML(html: string): { isValid: boolean; issues: string[] } {
