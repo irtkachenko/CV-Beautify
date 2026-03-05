@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { RefObject, SyntheticEvent } from "react";
 
 type UseCvIframePreviewOptions = {
@@ -47,7 +47,7 @@ function applyPreviewStyles(iframe: HTMLIFrameElement) {
   style.textContent = `
     html, body {
       margin: 0 !important;
-      overflow: hidden !important;
+      overflow-x: hidden !important;
     }
   `;
   doc.head?.appendChild(style);
@@ -63,6 +63,7 @@ export function useCvIframePreview({
   const [scale, setScale] = useState(1);
   const [iframeHeight, setIframeHeight] = useState(defaultHeight);
   const [iframeReady, setIframeReady] = useState(false);
+  const iframeWatchCleanupRef = useRef<(() => void) | null>(null);
 
   const scaleDepsKey = useMemo(
     () => `${enabled ? 1 : 0}:${paddingPx}:${sourceUrl || ""}`,
@@ -105,7 +106,16 @@ export function useCvIframePreview({
     if (!enabled) return;
     setIframeReady(false);
     setIframeHeight(defaultHeight);
+    iframeWatchCleanupRef.current?.();
+    iframeWatchCleanupRef.current = null;
   }, [enabled, sourceUrl, defaultHeight]);
+
+  useEffect(() => {
+    return () => {
+      iframeWatchCleanupRef.current?.();
+      iframeWatchCleanupRef.current = null;
+    };
+  }, []);
 
   const handleIframeLoad = useCallback((e: SyntheticEvent<HTMLIFrameElement>) => {
     const iframe = e.currentTarget;
@@ -120,6 +130,27 @@ export function useCvIframePreview({
         }
         setIframeReady(true);
       };
+
+      iframeWatchCleanupRef.current?.();
+      iframeWatchCleanupRef.current = null;
+
+      const iframeWindow = iframe.contentWindow;
+      const doc = iframeWindow?.document;
+      if (iframeWindow && doc && typeof ResizeObserver !== "undefined") {
+        const observer = new ResizeObserver(() => {
+          window.requestAnimationFrame(measureAndCommit);
+        });
+        observer.observe(doc.documentElement);
+        if (doc.body) observer.observe(doc.body);
+
+        const onIframeResize = () => window.requestAnimationFrame(measureAndCommit);
+        iframeWindow.addEventListener("resize", onIframeResize);
+
+        iframeWatchCleanupRef.current = () => {
+          observer.disconnect();
+          iframeWindow.removeEventListener("resize", onIframeResize);
+        };
+      }
 
       window.requestAnimationFrame(measureAndCommit);
       window.setTimeout(measureAndCommit, 120);
