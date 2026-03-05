@@ -427,7 +427,7 @@ export default function CvViewPage() {
 
             <div
               ref={containerRef}
-              className="bg-gray-100 p-4 sm:p-8 flex justify-center overflow-hidden"
+              className="bg-gray-100 px-4 sm:px-8 pt-4 sm:pt-8 pb-8 sm:pb-12 flex justify-center items-start overflow-x-hidden"
               style={{ minHeight: "500px" }}
             >
               <div
