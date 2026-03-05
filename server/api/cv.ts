@@ -1,4 +1,6 @@
 import type { Express, Request, Response } from "express";
+import fsSync from "fs";
+import path from "path";
 
 interface AuthRequest extends Request {
   user: {
@@ -66,10 +68,26 @@ function sanitizeOriginalLinks(rawLinks: any) {
 }
 
 export function registerCvRoutes(app: Express) {
+  const templatesDir = path.join(process.cwd(), "client", "public", "templates");
+
+  const extractTemplateOrder = (fileName: string): number => {
+    const match = fileName.match(/template-(\d+)\.html$/i);
+    if (!match) return Number.MAX_SAFE_INTEGER;
+    return Number.parseInt(match[1], 10);
+  };
+
   // Get all CV templates
   app.get(api.templates.list.path, isAuthenticated, asyncHandler(async (req: AuthRequest, res: Response) => {
     const templates = await storage.getTemplates();
-    res.json(templates);
+    const availableTemplates = templates
+      .filter((template) => fsSync.existsSync(path.join(templatesDir, template.fileName)))
+      .sort((a, b) => {
+        const orderA = extractTemplateOrder(a.fileName);
+        const orderB = extractTemplateOrder(b.fileName);
+        if (orderA !== orderB) return orderA - orderB;
+        return a.id - b.id;
+      });
+    res.json(availableTemplates);
   }));
 
   // Start CV generation

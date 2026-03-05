@@ -506,12 +506,11 @@ export async function seedTemplates() {
   const existingFileNames = existing.map(t => t.fileName);
   const templatesToAdd = templates.filter(t => !existingFileNames.includes(t.fileName));
   
-  // Find templates that should be removed (not in files anymore)
-  const requiredFileNames = templates.map(t => t.fileName);
-  const templatesToRemove = existing.filter(t => !requiredFileNames.includes(t.fileName));
+  // Keep stale DB templates to avoid deleting previously generated CVs on file rename/removal.
+  const staleTemplates = existing.filter(t => !templates.some(fileTemplate => fileTemplate.fileName === t.fileName));
 
-  if (templatesToAdd.length > 0 || templatesToRemove.length > 0) {
-    logger.info(`Templates: adding ${templatesToAdd.length}, removing ${templatesToRemove.length}`);
+  if (templatesToAdd.length > 0 || staleTemplates.length > 0) {
+    logger.info(`Templates: adding ${templatesToAdd.length}, stale ${staleTemplates.length}`);
   }
 
   // Add new templates
@@ -520,10 +519,8 @@ export async function seedTemplates() {
     logger.info(`✓ Added template: ${template.name}`);
   }
 
-  // Remove obsolete templates (will also delete related CVs)
-  for (const template of templatesToRemove) {
-    await storage.deleteTemplate(template.id);
-    logger.info(`✓ Removed template: ${template.name}`);
+  if (staleTemplates.length > 0) {
+    logger.info("Stale templates kept to preserve generated CV relations");
   }
 }
 
@@ -531,3 +528,6 @@ export async function seedTemplates() {
 export { parseModelTemperature, clampModelTemperature } from "../utils/temperature-utils";
 export { validateGenerationPrompt, validateEditPrompt } from "../utils/validation-utils";
 export { sanitizeOriginalLinks } from "../utils/file-utils";
+
+
+
