@@ -11,6 +11,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Textarea } from "@/components/ui/textarea";
 import { useTranslation } from "react-i18next";
 import { DEFAULT_EDIT_TEMPERATURE, MODEL_TEMPERATURE_MAX, MODEL_TEMPERATURE_MIN } from "@shared/config";
+import { useCvIframePreview } from "@/hooks/use-cv-iframe-preview";
 
 const AI_EDIT_PROMPT_MIN_LENGTH = 10;
 const AI_EDIT_PROMPT_MAX_LENGTH = 1000;
@@ -39,8 +40,6 @@ export default function CvViewPage() {
   const [useOriginalDocumentContext, setUseOriginalDocumentContext] = useState(false);
   const [editTemperature, setEditTemperature] = useState(DEFAULT_EDIT_TEMPERATURE);
   const [isSubmittingAiEdit, setIsSubmittingAiEdit] = useState(false);
-  const [scale, setScale] = useState(1);
-  const [iframeHeight, setIframeHeight] = useState("297mm");
 
   const containerRef = useRef<HTMLDivElement>(null);
   const lastFailedMessageRef = useRef<string | null>(null);
@@ -153,50 +152,13 @@ export default function CvViewPage() {
     }
   }, [cvData?.originalDocText, cvData?.originalDocLinks, useOriginalDocumentContext]);
 
-  useEffect(() => {
-    const updateScale = () => {
-      if (!containerRef.current) return;
-      const containerWidth = containerRef.current.offsetWidth;
-      const cvWidthPx = 794;
-      const padding = 32;
-      const availableWidth = containerWidth - padding;
-      setScale(availableWidth < cvWidthPx ? availableWidth / cvWidthPx : 1);
-    };
-
-    updateScale();
-    window.addEventListener("resize", updateScale);
-    const timer = setTimeout(updateScale, 100);
-
-    return () => {
-      window.removeEventListener("resize", updateScale);
-      clearTimeout(timer);
-    };
-  }, []);
-
-  const handleIframeLoad = (e: React.SyntheticEvent<HTMLIFrameElement>) => {
-    const iframe = e.currentTarget;
-    try {
-      if (!iframe.contentWindow) return;
-
-      setTimeout(() => {
-        if (!iframe.contentWindow) return;
-
-        const body = iframe.contentWindow.document.body;
-        const html = iframe.contentWindow.document.documentElement;
-        const height = Math.max(
-          body.scrollHeight,
-          body.offsetHeight,
-          html.clientHeight,
-          html.scrollHeight,
-          html.offsetHeight
-        );
-        setIframeHeight(`${height}px`);
-      }, 100);
-    } catch (err) {
-      console.error("Could not access iframe content for height calculation:", err);
-      setIframeHeight("297mm");
-    }
-  };
+  const { scale, iframeHeight, iframeReady, handleIframeLoad } = useCvIframePreview({
+    containerRef,
+    sourceUrl: pdfUrl,
+    paddingPx: 32,
+    enabled: Boolean(cvData),
+    defaultHeight: "297mm",
+  });
 
   const handleDownloadPDF = async () => {
     if (!cvData?.id || !pdfUrl) {
@@ -508,7 +470,7 @@ export default function CvViewPage() {
                     <iframe
                       src={pdfUrl}
                       onLoad={handleIframeLoad}
-                      className="w-full h-full border-0 absolute top-0 left-0"
+                      className={`w-full h-full border-0 absolute top-0 left-0 transition-opacity duration-150 ${iframeReady ? "opacity-100" : "opacity-0"}`}
                       style={{
                         width: "210mm",
                         height: iframeHeight,

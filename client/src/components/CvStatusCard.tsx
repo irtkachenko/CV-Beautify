@@ -1,33 +1,16 @@
-import { useState, useRef, useEffect } from "react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useState, useRef } from "react";
 import { usePollingJob } from "@/hooks/use-generate";
 import { useDeleteResume } from "@/hooks/use-cvs";
-import { FileText, Loader2, CheckCircle2, AlertCircle, Calendar, Eye, Download, Trash2 } from "lucide-react";
+import { FileText, Loader2, CheckCircle2, AlertCircle, Calendar, Eye, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { Link } from "wouter";
-import { useToast } from "@/hooks/use-toast";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { api } from "@shared/routes";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import type { GeneratedCvResponse } from "@shared/routes";
 import { useTranslation } from "react-i18next";
-
-// Function to get progress width based on progress text
-function getProgressWidth(progress?: string | null): string {
-  if (!progress) return "25%";
-
-  const progressLower = progress.toLowerCase();
-  if (progressLower.includes("starting")) return "10%";
-  if (progressLower.includes("analyzing")) return "30%";
-  if (progressLower.includes("formatting")) return "60%";
-  if (progressLower.includes("finalizing")) return "85%";
-  if (progressLower.includes("generating pdf")) return "90%";
-
-  return "50%"; // Default for unknown progress
-}
+import { useCvIframePreview } from "@/hooks/use-cv-iframe-preview";
 
 export function CvStatusCard({ cv }: { cv: GeneratedCvResponse }) {
   const { t } = useTranslation();
-  const queryClient = useQueryClient();
   // Poll if status is pending/processing
   const { data: polledJob } = usePollingJob(cv.id, cv.status);
 
@@ -37,11 +20,8 @@ export function CvStatusCard({ cv }: { cv: GeneratedCvResponse }) {
   const isComplete = displayData.status === "complete";
 
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [scale, setScale] = useState(1);
-  const [iframeHeight, setIframeHeight] = useState('297mm');
   const containerRef = useRef<HTMLDivElement>(null);
-  const { toast } = useToast();
-  
+
   // Use the centralized delete hook instead of manual implementation
   const { mutate: deleteCv, isPending: isDeleting } = useDeleteResume();
 
@@ -56,56 +36,14 @@ export function CvStatusCard({ cv }: { cv: GeneratedCvResponse }) {
   const templateScreenshot = displayData.template?.screenshotUrl || cv.template?.screenshotUrl;
   const cvName = displayData.name || cv.name;
   const displayName = cvName || displayData.template?.name || cv.template?.name || t("common.template");
-
-  // Scale calculation for iframe
-  useEffect(() => {
-    const updateScale = () => {
-      if (containerRef.current && isComplete) {
-        const containerWidth = containerRef.current.offsetWidth;
-        // 210mm is approximately 794px at 96 DPI, but for card we use smaller scale
-        const cvWidthPx = 794;
-        const padding = 16; // Total horizontal padding in the card container
-        const availableWidth = containerWidth - padding;
-
-        if (availableWidth < cvWidthPx) {
-          setScale(availableWidth / cvWidthPx);
-        } else {
-          setScale(1);
-        }
-      }
-    };
-
-    updateScale();
-    window.addEventListener('resize', updateScale);
-    const timer = setTimeout(updateScale, 100);
-
-    return () => {
-      window.removeEventListener('resize', updateScale);
-      clearTimeout(timer);
-    };
-  }, [isComplete]);
-
-  const handleIframeLoad = (e: React.SyntheticEvent<HTMLIFrameElement>) => {
-    const iframe = e.currentTarget;
-    try {
-      if (iframe.contentWindow) {
-        setTimeout(() => {
-          if (iframe.contentWindow) {
-            const body = iframe.contentWindow.document.body;
-            const html = iframe.contentWindow.document.documentElement;
-            const height = Math.max(
-              body.scrollHeight, body.offsetHeight,
-              html.clientHeight, html.scrollHeight, html.offsetHeight
-            );
-            setIframeHeight(`${height}px`);
-          }
-        }, 100);
-      }
-    } catch (err) {
-      console.error("Could not access iframe content for height calculation:", err);
-      setIframeHeight('297mm');
-    }
-  };
+  const previewSourceUrl = isComplete ? displayData.pdfUrl : null;
+  const { scale, iframeHeight, iframeReady, handleIframeLoad } = useCvIframePreview({
+    containerRef,
+    sourceUrl: previewSourceUrl,
+    paddingPx: 16,
+    enabled: isComplete,
+    defaultHeight: "297mm",
+  });
 
   return (
     <>
@@ -202,7 +140,7 @@ export function CvStatusCard({ cv }: { cv: GeneratedCvResponse }) {
                     <iframe
                       src={displayData.pdfUrl}
                       onLoad={handleIframeLoad}
-                      className="w-full h-full border-0 absolute top-0 left-0"
+                      className={`w-full h-full border-0 absolute top-0 left-0 transition-opacity duration-150 ${iframeReady ? "opacity-100" : "opacity-0"}`}
                       style={{
                         width: '210mm',
                         height: iframeHeight
