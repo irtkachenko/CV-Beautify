@@ -17,6 +17,107 @@ type UseCvIframePreviewResult = {
 };
 
 const CV_WIDTH_PX = 794;
+const A4_HEIGHT_PX = 1123;
+const PAGE_BOTTOM_SAFE_PX = 80;
+const PAGE_TOP_PADDING_PX = 60;
+const PAGE_DIVIDER_PX = 14;
+
+function getOffsetTopFromContainer(element: HTMLElement, container: HTMLElement): number {
+  let top = 0;
+  let current: HTMLElement | null = element;
+
+  while (current && current !== container) {
+    top += current.offsetTop;
+    current = current.offsetParent as HTMLElement | null;
+  }
+
+  return top;
+}
+
+function getBreakCandidates(container: HTMLElement): HTMLElement[] {
+  const main = container.querySelector("main") as HTMLElement | null;
+  if (!main) return [];
+
+  const skipTags = new Set(["script", "style", "link", "meta", "noscript"]);
+  const candidates: HTMLElement[] = [];
+
+  for (const parent of Array.from(main.children)) {
+    if (skipTags.has(parent.tagName.toLowerCase())) continue;
+    for (const child of Array.from(parent.children)) {
+      if (skipTags.has(child.tagName.toLowerCase())) continue;
+      candidates.push(child as HTMLElement);
+    }
+  }
+
+  return candidates;
+}
+
+function clearInjectedPageMarkers(doc: Document) {
+  const markers = doc.querySelectorAll(
+    ".cv-page-bottom-spacer, .cv-page-divider, .cv-page-top-spacer"
+  );
+  markers.forEach((marker) => marker.remove());
+}
+
+function applyPreviewPagination(iframe: HTMLIFrameElement) {
+  const doc = iframe.contentWindow?.document;
+  if (!doc) return;
+
+  const container =
+    (doc.querySelector(".container") as HTMLElement | null) ?? (doc.body as HTMLElement | null);
+  if (!container) return;
+
+  clearInjectedPageMarkers(doc);
+  void container.offsetHeight;
+
+  const bgColor = iframe.contentWindow?.getComputedStyle(container).backgroundColor || "#ffffff";
+  const candidates = getBreakCandidates(container);
+
+  for (const block of candidates) {
+    const blockTop = getOffsetTopFromContainer(block, container);
+    const blockBottom = blockTop + block.offsetHeight;
+
+    const pageIndex = Math.floor(blockTop / A4_HEIGHT_PX);
+    const currentPageEnd = (pageIndex + 1) * A4_HEIGHT_PX;
+    const safeEnd = currentPageEnd - PAGE_BOTTOM_SAFE_PX;
+    const relTop = blockTop - pageIndex * A4_HEIGHT_PX;
+    const isAlreadyAtTop = relTop < PAGE_TOP_PADDING_PX + PAGE_DIVIDER_PX + 10;
+
+    if (blockBottom <= safeEnd || isAlreadyAtTop) continue;
+
+    const bottomSpacerHeight = Math.max(0, currentPageEnd - blockTop);
+
+    const bottomSpacer = doc.createElement("div");
+    bottomSpacer.className = "cv-page-bottom-spacer";
+    bottomSpacer.style.cssText =
+      `height:${bottomSpacerHeight}px !important;` +
+      `min-height:${bottomSpacerHeight}px !important;` +
+      `display:block !important;width:100% !important;` +
+      `background:${bgColor} !important;margin:0 !important;padding:0 !important;`;
+
+    const divider = doc.createElement("div");
+    divider.className = "cv-page-divider";
+    divider.style.cssText =
+      `height:${PAGE_DIVIDER_PX}px !important;` +
+      `min-height:${PAGE_DIVIDER_PX}px !important;` +
+      "display:block !important;width:100% !important;" +
+      "background:#d1d5db !important;margin:0 !important;padding:0 !important;";
+
+    const topSpacer = doc.createElement("div");
+    topSpacer.className = "cv-page-top-spacer";
+    topSpacer.style.cssText =
+      `height:${PAGE_TOP_PADDING_PX}px !important;` +
+      `min-height:${PAGE_TOP_PADDING_PX}px !important;` +
+      `display:block !important;width:100% !important;` +
+      `background:${bgColor} !important;margin:0 !important;padding:0 !important;`;
+
+    block.parentNode?.insertBefore(bottomSpacer, block);
+    block.parentNode?.insertBefore(divider, block);
+    block.parentNode?.insertBefore(topSpacer, block);
+
+    void container.offsetHeight;
+  }
+}
 
 function getMeasuredHeight(iframe: HTMLIFrameElement): number {
   const doc = iframe.contentWindow?.document;
@@ -47,6 +148,16 @@ function applyPreviewStyles(iframe: HTMLIFrameElement) {
   style.textContent = `
     body {
       margin: 0 !important;
+    }
+
+    .cv-page-divider {
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7), inset 0 -1px 0 rgba(0, 0, 0, 0.06);
+    }
+
+    @media print {
+      .cv-page-divider {
+        display: none !important;
+      }
     }
   `;
   doc.head?.appendChild(style);
@@ -136,6 +247,11 @@ export function useCvIframePreview({
         setIframeReady(true);
       };
 
+      const paginateAndMeasure = () => {
+        applyPreviewPagination(iframe);
+        measureAndCommit();
+      };
+
       iframeWatchCleanupRef.current?.();
       iframeWatchCleanupRef.current = null;
 
@@ -157,19 +273,38 @@ export function useCvIframePreview({
         };
       }
 
-      window.requestAnimationFrame(measureAndCommit);
-      window.setTimeout(measureAndCommit, 120);
-      window.setTimeout(measureAndCommit, 420);
+      window.requestAnimationFrame(paginateAndMeasure);
+      window.setTimeout(paginateAndMeasure, 120);
+      window.setTimeout(paginateAndMeasure, 420);
 
       const fonts = iframe.contentWindow?.document?.fonts;
       if (fonts?.ready) {
         fonts.ready
           .then(() => {
-            window.requestAnimationFrame(measureAndCommit);
+            window.requestAnimationFrame(paginateAndMeasure);
           })
           .catch(() => {
             setIframeReady(true);
           });
+      }
+
+      const iframeDoc = iframe.contentWindow?.document;
+      if (iframeDoc) {
+        const pendingImages = Array.from(iframeDoc.images).filter((img) => !img.complete);
+        if (pendingImages.length > 0) {
+          Promise.all(
+            pendingImages.map(
+              (img) =>
+                new Promise<void>((resolve) => {
+                  const done = () => resolve();
+                  img.addEventListener("load", done, { once: true });
+                  img.addEventListener("error", done, { once: true });
+                })
+            )
+          ).then(() => {
+            window.requestAnimationFrame(paginateAndMeasure);
+          });
+        }
       }
     } catch (err) {
       console.error("Could not access iframe content for preview sizing:", err);
