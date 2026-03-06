@@ -16,8 +16,8 @@ export const appConfig = {
   },
   ai: {
     model: "meta-llama/llama-3.3-70b-instruct",
-    validationTemperature: parseBoundedFloat(process.env.AI_VALIDATION_TEMPERATURE, 0, 0, 2),
-    editPromptMinLength: 10,
+    validationTemperature: parseBoundedFloat(process.env.AI_VALIDATION_TEMPERATURE, 0.3, 0, 2),
+    editPromptMinLength: 3,
     editPromptMaxLength: 1000,
     generationPromptMaxLength: 600,
     defaultGenerationTemperature: 0.7,

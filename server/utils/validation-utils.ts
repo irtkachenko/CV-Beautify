@@ -31,10 +31,10 @@ export function validateGenerationPrompt(prompt: string): { isValid: boolean; er
  * @returns Validation result
  */
 export function validateEditPrompt(prompt: string): { isValid: boolean; error?: string } {
-  if (prompt.length < appConfig.ai.editPromptMinLength) {
+  if (prompt.length < (appConfig.ai.editPromptMinLength || 3)) {
     return {
       isValid: false,
-      error: `Prompt is too short. Minimum ${appConfig.ai.editPromptMinLength} characters.`
+      error: `Prompt is too short. Minimum ${appConfig.ai.editPromptMinLength || 3} characters.`
     };
   }
   if (prompt.length > appConfig.ai.editPromptMaxLength) {
