@@ -21,6 +21,7 @@ const A4_HEIGHT_PX = 1123;
 const PAGE_BOTTOM_SAFE_PX = 80;
 const PAGE_TOP_PADDING_PX = 90;
 const PAGE_DIVIDER_PX = 14;
+const PAGE_LABEL_PREFIX = "Page";
 
 function getOffsetTopFromContainer(element: HTMLElement, container: HTMLElement): number {
   let top = 0;
@@ -100,8 +101,13 @@ function applyPreviewPagination(iframe: HTMLIFrameElement) {
     divider.style.cssText =
       `height:${PAGE_DIVIDER_PX}px !important;` +
       `min-height:${PAGE_DIVIDER_PX}px !important;` +
-      "display:block !important;width:100% !important;" +
-      "background:#d1d5db !important;margin:0 !important;padding:0 !important;";
+      "display:flex !important;width:100% !important;" +
+      "align-items:center !important;justify-content:center !important;" +
+      "margin:0 !important;padding:0 !important;background:transparent !important;";
+    const dividerLabel = doc.createElement("span");
+    dividerLabel.className = "cv-page-divider-label";
+    dividerLabel.textContent = `${PAGE_LABEL_PREFIX} ${pageIndex + 2}`;
+    divider.appendChild(dividerLabel);
 
     const topSpacer = doc.createElement("div");
     topSpacer.className = "cv-page-top-spacer";
@@ -153,7 +159,36 @@ function applyPreviewStyles(iframe: HTMLIFrameElement) {
     }
 
     .cv-page-divider {
-      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7), inset 0 -1px 0 rgba(0, 0, 0, 0.06);
+      position: relative;
+    }
+
+    .cv-page-divider::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 50%;
+      border-top: 2px dashed #9ca3af;
+      transform: translateY(-50%);
+      pointer-events: none;
+    }
+
+    .cv-page-divider-label {
+      position: relative;
+      z-index: 1;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      height: 18px;
+      padding: 0 8px;
+      border-radius: 999px;
+      border: 1px solid #cbd5e1;
+      background: #f8fafc;
+      color: #475569;
+      font-size: 10px;
+      line-height: 1;
+      font-weight: 600;
+      letter-spacing: 0.02em;
     }
 
     @media print {
