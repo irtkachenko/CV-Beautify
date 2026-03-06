@@ -177,6 +177,7 @@ export default function CvViewPage() {
         filename: `cv-${cvData.id}.pdf`,
         windowWidth: 800,
         contentWidthMm: 190,
+        autoPrint: true,
       });
       toast({
         title: t("cv_view.toasts.pdf_generated_title"),
