@@ -5,7 +5,7 @@ import { ArrowLeft, Download, Loader2, FileText, CheckCircle, Sparkles, AlertCir
 import { useToast } from "@/hooks/use-toast";
 import { api, buildUrl } from "@shared/routes";
 import { GeneratedCvResponse } from "@shared/schema";
-import { generatePdfFromUrl } from "@/lib/pdf-generator";
+import { generatePdfFromUrl } from "@/lib/pdf-generator-fixed";
 import { usePollingJob } from "@/hooks/use-generate";
 import { useQueryClient } from "@tanstack/react-query";
 import { Textarea } from "@/components/ui/textarea";
