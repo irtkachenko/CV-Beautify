@@ -19,7 +19,7 @@ type UseCvIframePreviewResult = {
 const CV_WIDTH_PX = 794;
 const A4_HEIGHT_PX = 1123;
 const PAGE_BOTTOM_SAFE_PX = 80;
-const PAGE_TOP_PADDING_PX = 60;
+const PAGE_TOP_PADDING_PX = 90;
 const PAGE_DIVIDER_PX = 14;
 
 function getOffsetTopFromContainer(element: HTMLElement, container: HTMLElement): number {
@@ -109,7 +109,9 @@ function applyPreviewPagination(iframe: HTMLIFrameElement) {
       `height:${PAGE_TOP_PADDING_PX}px !important;` +
       `min-height:${PAGE_TOP_PADDING_PX}px !important;` +
       `display:block !important;width:100% !important;` +
-      `background:${bgColor} !important;margin:0 !important;padding:0 !important;`;
+      `background:${bgColor} !important;margin:0 !important;padding:0 !important;` +
+      "box-sizing:border-box !important;overflow:hidden !important;line-height:0 !important;font-size:0 !important;";
+    topSpacer.innerHTML = "&nbsp;";
 
     block.parentNode?.insertBefore(bottomSpacer, block);
     block.parentNode?.insertBefore(divider, block);

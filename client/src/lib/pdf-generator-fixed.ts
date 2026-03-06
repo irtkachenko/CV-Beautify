@@ -92,35 +92,15 @@ async function waitForResources(win: Window): Promise<void> {
   await delay(120);
 }
 
-function printAndWait(win: Window): Promise<void> {
-  return new Promise<void>((resolve, reject) => {
-    let finished = false;
-
-    const finalize = () => {
-      if (finished) return;
-      finished = true;
-      clearTimeout(timeoutId);
-      win.removeEventListener("afterprint", onAfterPrint);
-      setTimeout(() => {
-        win.close();
-        resolve();
-      }, 120);
-    };
-
-    const onAfterPrint = () => finalize();
-
-    const timeoutId = window.setTimeout(() => finalize(), 20000);
-    win.addEventListener("afterprint", onAfterPrint, { once: true });
-
+function triggerPrint(win: Window): void {
+  window.setTimeout(() => {
     try {
       win.focus();
       win.print();
     } catch (error) {
-      clearTimeout(timeoutId);
-      win.removeEventListener("afterprint", onAfterPrint);
-      reject(error);
+      console.error("Print trigger failed:", error);
     }
-  });
+  }, 40);
 }
 
 function createPrintWindow(): Window {
@@ -143,9 +123,9 @@ async function printElement(element: HTMLElement, filename: string): Promise<voi
   injectPrintStyle(printDoc);
   printDoc.title = sanitizeTitle(filename);
   printDoc.body.appendChild(element.cloneNode(true));
-
-  await waitForResources(printWindow);
-  await printAndWait(printWindow);
+  void waitForResources(printWindow).then(() => {
+    triggerPrint(printWindow);
+  });
 }
 
 async function fetchHtml(url: string): Promise<string> {
@@ -225,8 +205,9 @@ export async function generatePdfFromUrl(options: PdfFromUrlOptions): Promise<vo
     const html = htmlContent ?? (await fetchHtml(url!));
     const printWindow = createPrintWindow();
     mountHtmlIntoPrintDocument(printWindow.document, html, filename, url);
-    await waitForResources(printWindow);
-    await printAndWait(printWindow);
+    void waitForResources(printWindow).then(() => {
+      triggerPrint(printWindow);
+    });
   } finally {
     onLoadingChange?.(false);
   }
