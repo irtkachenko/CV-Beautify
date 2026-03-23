@@ -26,7 +26,7 @@ export function GenerateForm({
 
   return (
     <div className="w-full md:w-3/5 p-4 sm:p-6 lg:p-8 flex flex-col max-h-[58vh] md:max-h-[85vh]">
-      <div className="flex-1 overflow-y-auto pr-4 scrollbar-hide">
+      <div className="flex-1 overflow-y-auto pl-1 pr-4 scrollbar-hide">
         <div className="mb-6 sm:mb-8">
           <h2 className="font-display font-bold text-lg sm:text-xl lg:text-2xl mb-2 text-foreground">
             {t("modal.import_content")}
