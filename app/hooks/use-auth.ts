@@ -24,7 +24,8 @@ async function fetchUser(): Promise<User | null> {
 }
 
 async function loginWithGoogle(): Promise<void> {
-  const redirectTo = process.env.NEXT_PUBLIC_AUTH_REDIRECT_URL || `${window.location.origin}/`;
+  const redirectBase = process.env.NEXT_PUBLIC_AUTH_REDIRECT_URL || window.location.origin;
+  const redirectTo = `${redirectBase.replace(/\/$/, "")}/auth/callback`;
 
   const { error } = await supabase.auth.signInWithOAuth({
     provider: "google",

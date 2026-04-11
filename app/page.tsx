@@ -1,13 +1,22 @@
 "use client";
 
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Sparkles, FileText, CheckCircle2, ArrowRight, Upload, Zap, Download } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/hooks/use-auth";
 
 export default function LandingPage() {
+  const router = useRouter();
   const { t } = useTranslation();
-  const { login, isLoggingIn } = useAuth();
+  const { user, isLoading, login, isLoggingIn } = useAuth();
+
+  useEffect(() => {
+    if (!isLoading && user) {
+      router.replace("/gallery");
+    }
+  }, [isLoading, user, router]);
 
   const handleLogin = async () => {
     await login();

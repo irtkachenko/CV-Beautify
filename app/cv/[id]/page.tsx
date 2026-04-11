@@ -14,6 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useTranslation } from "react-i18next";
 import { useCvIframePreview } from "@/hooks/use-cv-iframe-preview";
 import { authedFetch } from "@lib/authed-fetch";
+import { useAuth } from "@/hooks/use-auth";
 
 const AI_EDIT_PROMPT_MIN_LENGTH = 10;
 const AI_EDIT_PROMPT_MAX_LENGTH = 1000;
@@ -29,6 +30,7 @@ export default function CvViewPage() {
   const params = useParams();
   const id = params.id as string;
   const router = useRouter();
+  const { user, isLoading: isAuthLoading } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { t } = useTranslation();
@@ -82,8 +84,15 @@ export default function CvViewPage() {
   }, [id, queryClient, t]);
 
   useEffect(() => {
+    if (!isAuthLoading && !user) {
+      router.replace("/");
+    }
+  }, [isAuthLoading, user, router]);
+
+  useEffect(() => {
+    if (!user) return;
     fetchCvData();
-  }, [fetchCvData]);
+  }, [fetchCvData, user]);
 
   const pollingInitialStatus = cvData?.status || "complete";
   const { data: polledJob } = usePollingJob(cvData?.id || 0, pollingInitialStatus);
@@ -317,7 +326,7 @@ export default function CvViewPage() {
     router.push("/my-resumes");
   };
 
-  if (isLoading && !cvData) {
+  if (isAuthLoading || !user || (isLoading && !cvData)) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="text-center">

@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { useRouter } from "next/navigation";
 import { useMyResumes } from "@/hooks/use-cvs";
 import { Navbar } from "@/components/layout/Navbar";
 import { CvStatusCard } from "@/components/CvStatusCard";
@@ -8,15 +9,32 @@ import { motion } from "framer-motion";
 import { Loader2, FileX, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { useTranslation } from "react-i18next";
+import { useAuth } from "@/hooks/use-auth";
 
 export default function MyResumesPage() {
+  const router = useRouter();
   const { t } = useTranslation();
+  const { user, isLoading: isAuthLoading } = useAuth();
   const { data: resumes, isLoading, error } = useMyResumes();
 
   // Scroll to top on mount to ensure user sees the latest CVs (newest at top)
   React.useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
+
+  React.useEffect(() => {
+    if (!isAuthLoading && !user) {
+      router.replace("/");
+    }
+  }, [isAuthLoading, user, router]);
+
+  if (isAuthLoading || !user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-mesh pb-20 pt-24">

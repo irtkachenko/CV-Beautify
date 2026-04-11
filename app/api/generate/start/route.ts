@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { authenticateRequest } from "@lib/server-auth";
+import { runGenerateCvJob } from "@lib/cv-jobs";
 
 export const dynamic = "force-dynamic";
 
@@ -16,7 +17,6 @@ export async function POST(request: NextRequest) {
     const file = formData.get("file") as File;
     const templateId = formData.get("templateId") as string;
     const generationPrompt = formData.get("generationPrompt") as string | null;
-    const temperature = formData.get("temperature") as string | null;
 
     if (!file) {
       return NextResponse.json({ message: "No file uploaded" }, { status: 400 });
@@ -42,11 +42,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ message: "Template not found" }, { status: 404 });
     }
 
-    // Extract text from DOCX file
-    // TODO: Implement DOCX parsing (mammoth) on server side
-    // For now, we'll create a placeholder
-    const docxText = "Placeholder extracted text";
-    const docxLinks: any[] = [];
+    const fileBuffer = Buffer.from(await file.arrayBuffer());
 
     // Create CV generation record
     const { data: newCv, error: createError } = await supabase
@@ -55,9 +51,11 @@ export async function POST(request: NextRequest) {
         user_id: userId,
         template_id: templateIdNum,
         status: "pending",
+        error_message: null,
+        progress: "Queued for processing...",
         name: file.name.replace(/\.docx$/i, ""),
-        original_doc_text: docxText,
-        original_doc_links: docxLinks,
+        original_doc_text: null,
+        original_doc_links: [],
       })
       .select()
       .single();
@@ -67,9 +65,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ message: "Failed to start CV generation" }, { status: 500 });
     }
 
-    // TODO: Trigger async CV generation process
-    // This should be implemented as a background job or edge function
-    // For now, we'll return 202 Accepted and the client can poll for status
+    void runGenerateCvJob({
+      supabase,
+      cvId: newCv.id,
+      fileBuffer,
+      template,
+      generationPrompt,
+    });
 
     return NextResponse.json({ jobId: newCv.id }, { status: 202 });
   } catch (error) {

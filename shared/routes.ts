@@ -114,6 +114,21 @@ export const api = {
         401: errorSchemas.unauthorized,
       },
     },
+    update: {
+      method: 'PATCH' as const,
+      path: '/api/resumes/:id' as const,
+      input: z.object({
+        name: z.string().min(1).max(160).optional(),
+        htmlContent: z.string().min(1).optional(),
+      }),
+      responses: {
+        200: z.custom<GeneratedCvResponse>(),
+        400: errorSchemas.validation,
+        403: errorSchemas.unauthorized,
+        404: errorSchemas.notFound,
+        401: errorSchemas.unauthorized,
+      },
+    },
   },
   generatedCv: {
     render: {

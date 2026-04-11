@@ -6,7 +6,7 @@ Client:
 
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-- `NEXT_PUBLIC_AUTH_REDIRECT_URL` (optional, recommended for non-local domains)
+- `NEXT_PUBLIC_AUTH_REDIRECT_URL` (optional, recommended for non-local domains, without trailing `/`)
 
 Server:
 
@@ -29,8 +29,8 @@ In Supabase dashboard:
 1. Authentication -> Providers
 2. Enable Google provider
 3. Add redirect URLs:
-   - Local: `http://localhost:3000/`
-   - Production: your deployed domain root or configured callback URL
+   - Local: `http://localhost:3000/auth/callback`
+   - Production: `https://your-domain.com/auth/callback`
 
 ## 4. Verify RLS
 

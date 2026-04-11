@@ -34,6 +34,8 @@ Required:
 Optional:
 
 - `NEXT_PUBLIC_AUTH_REDIRECT_URL` (explicit OAuth redirect URL, useful on preview/proxy domains)
+- `GROQ_MODEL` (preferred generation model, default chain starts with `mixtral-8x7b-32768`)
+- `GROQ_MODELS` (comma-separated fallback model chain, tried in order)
 
 ## Auth + RLS notes
 

@@ -13,6 +13,8 @@ export function Navbar() {
   const { user, logout } = useAuth();
   const pathname = usePathname();
   const [isMenuOpen, setIsMenuOpen] = React.useState(false);
+  const isUkrainian = i18n.language?.toLowerCase().startsWith("uk") || i18n.language?.toLowerCase().startsWith("ua");
+  const isEnglish = i18n.language?.toLowerCase().startsWith("en");
 
   if (!user) return null;
 
@@ -59,8 +61,8 @@ export function Navbar() {
           <div className="flex items-center gap-2 sm:gap-4">
             <div className="hidden sm:flex items-center gap-1 bg-secondary/50 backdrop-blur-md rounded-lg p-1 border border-border/40">
               <button
-                onClick={() => i18n.changeLanguage('ua')}
-                className={`px-2 py-1 text-xs font-bold rounded-md transition-all ${i18n.language === 'ua' ? 'bg-primary text-white shadow-sm' : 'text-muted-foreground hover:text-foreground'
+                onClick={() => i18n.changeLanguage('uk')}
+                className={`px-2 py-1 text-xs font-bold rounded-md transition-all ${isUkrainian ? 'bg-primary text-white shadow-sm' : 'text-muted-foreground hover:text-foreground'
                   }`}
               >
                 UA
@@ -68,7 +70,7 @@ export function Navbar() {
               <div className="w-[1px] h-3 bg-border/60 mx-px" />
               <button
                 onClick={() => i18n.changeLanguage('en')}
-                className={`px-2 py-1 text-xs font-bold rounded-md transition-all ${i18n.language === 'en' ? 'bg-primary text-white shadow-sm' : 'text-muted-foreground hover:text-foreground'
+                className={`px-2 py-1 text-xs font-bold rounded-md transition-all ${isEnglish ? 'bg-primary text-white shadow-sm' : 'text-muted-foreground hover:text-foreground'
                   }`}
               >
                 EN
@@ -159,14 +161,14 @@ export function Navbar() {
                   <span className="text-xs font-medium px-2">{t("common.language")}</span>
                   <div className="flex items-center gap-1">
                     <button
-                      onClick={() => i18n.changeLanguage('ua')}
-                      className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${i18n.language === 'ua' ? 'bg-primary text-white' : 'text-muted-foreground'}`}
+                      onClick={() => i18n.changeLanguage('uk')}
+                      className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${isUkrainian ? 'bg-primary text-white' : 'text-muted-foreground'}`}
                     >
                       UA
                     </button>
                     <button
                       onClick={() => i18n.changeLanguage('en')}
-                      className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${i18n.language === 'en' ? 'bg-primary text-white' : 'text-muted-foreground'}`}
+                      className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${isEnglish ? 'bg-primary text-white' : 'text-muted-foreground'}`}
                     >
                       EN
                     </button>

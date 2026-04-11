@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { authenticateRequest } from "@lib/server-auth";
+import { runAiEditJob } from "@lib/cv-jobs";
 
 export const dynamic = "force-dynamic";
 
@@ -20,12 +21,17 @@ export async function POST(
     }
 
     const body = await request.json();
-    const { prompt, useOriginalDocumentContext, temperature } = body;
+    const { prompt, useOriginalDocumentContext } = body;
 
     // Verify ownership
     const { data: cv, error: fetchError } = await supabase
       .from("generated_cvs")
-      .select("*")
+      .select(`
+        *,
+        cv_templates (
+          file_name
+        )
+      `)
       .eq("id", cvId)
       .single();
 
@@ -37,24 +43,17 @@ export async function POST(
       return NextResponse.json({ message: "Access denied" }, { status: 403 });
     }
 
-    if (cv.status === "processing") {
-      return NextResponse.json({ message: "CV is already being processed" }, { status: 409 });
+    if (!prompt || typeof prompt !== "string" || prompt.trim().length < 5) {
+      return NextResponse.json({ message: "Prompt is required" }, { status: 400 });
     }
 
-    // Mark as processing
-    const { error: updateError } = await supabase
-      .from("generated_cvs")
-      .update({ status: "processing", progress: "Starting AI edit..." })
-      .eq("id", cvId);
-
-    if (updateError) {
-      console.error("Failed to update CV status:", updateError);
-      return NextResponse.json({ message: "Failed to start AI edit" }, { status: 500 });
-    }
-
-    // TODO: Trigger async AI edit process
-    // This should be implemented as a background job or edge function
-    // For now, we'll return 202 Accepted and the client can poll for status
+    void runAiEditJob({
+      supabase,
+      cvId,
+      cv,
+      prompt: prompt.trim(),
+      useOriginalDocumentContext: Boolean(useOriginalDocumentContext),
+    });
 
     return NextResponse.json({ jobId: cvId }, { status: 202 });
   } catch (error) {
