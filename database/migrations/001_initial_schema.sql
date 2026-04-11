@@ -45,6 +45,7 @@ CREATE TABLE IF NOT EXISTS generated_cvs (
 -- Conversations table
 CREATE TABLE IF NOT EXISTS conversations (
     id SERIAL PRIMARY KEY,
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     title TEXT NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
