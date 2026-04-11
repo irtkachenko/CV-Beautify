@@ -1,9 +1,8 @@
 import "./globals.css";
 import type { Metadata } from "next";
-import { QueryClientProvider } from "@tanstack/react-query";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/toaster";
-import { queryClient } from "@lib/queryClient";
+import { QueryProvider } from "@/components/query-provider";
 import { I18nProvider } from "@/components/i18n-provider";
 
 export const metadata: Metadata = {
@@ -19,14 +18,14 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <QueryClientProvider client={queryClient}>
+        <QueryProvider>
           <TooltipProvider>
             <I18nProvider>
               {children}
               <Toaster />
             </I18nProvider>
           </TooltipProvider>
-        </QueryClientProvider>
+        </QueryProvider>
       </body>
     </html>
   );
