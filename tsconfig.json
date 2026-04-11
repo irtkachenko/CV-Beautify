@@ -1,5 +1,5 @@
 {
-  "include": ["client/src/**/*", "shared/**/*", "server/**/*"],
+  "include": ["next-env.d.ts", "app/**/*", "client/src/**/*", "shared/**/*", "server/**/*"],
   "exclude": ["node_modules", "build", "dist", "**/*.test.ts"],
   "compilerOptions": {
     "incremental": true,
@@ -12,11 +12,11 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "allowImportingTsExtensions": true,
-    "moduleResolution": "bundler",
+    "moduleResolution": "node",
     "baseUrl": ".",
-    "types": ["node", "vite/client"],
+    "types": ["node", "vite/client", "next"],
     "paths": {
-      "@/*": ["./client/src/*"],
+      "@/*": ["./app/*", "./lib/*", "./client/src/*"],
       "@shared/*": ["./shared/*"]
     }
   }

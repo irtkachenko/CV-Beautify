@@ -1,3 +1,5 @@
+import { authedFetch } from "./authed-fetch";
+
 interface PdfFromUrlOptions {
   url?: string;
   htmlContent?: string;
@@ -220,7 +222,7 @@ async function printElement(element: HTMLElement, filename: string, autoPrint: b
 }
 
 async function fetchHtml(url: string): Promise<string> {
-  const response = await fetch(url, { credentials: "include" });
+  const response = await authedFetch(url);
   if (!response.ok) {
     throw new Error(`Failed to fetch printable content: ${response.status}`);
   }

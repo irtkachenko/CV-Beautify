@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@shared/routes";
 import { z } from "zod";
+import { authedFetch } from "@/lib/authed-fetch";
 
 function parseWithLogging<T>(schema: z.ZodSchema<T>, data: unknown, label: string): T {
   const result = schema.safeParse(data);
@@ -15,7 +16,7 @@ export function useTemplates() {
   return useQuery({
     queryKey: [api.templates.list.path],
     queryFn: async () => {
-      const res = await fetch(api.templates.list.path, { credentials: "include" });
+      const res = await authedFetch(api.templates.list.path);
       if (!res.ok) {
         if (res.status === 401) throw new Error("Unauthorized");
         throw new Error("Failed to fetch templates");

@@ -4,6 +4,7 @@ import { api, buildUrl } from "@shared/routes";
 import { z } from "zod";
 import i18n from "@/lib/i18n";
 import { parseWithLogging } from "@/utils/validation";
+import { authedFetch } from "@/lib/authed-fetch";
 
 // Input type for file upload
 type GenerateCvInput = {
@@ -26,10 +27,9 @@ export function useGenerateCv() {
       }
       formData.append("temperature", "0.5");
 
-      const res = await fetch(api.generate.start.path, {
+      const res = await authedFetch(api.generate.start.path, {
         method: api.generate.start.method,
         body: formData,
-        credentials: "include",
         headers: {
           'x-language': i18n.language || 'ua'
         }
@@ -68,7 +68,7 @@ export function usePollingJob(jobId: number, initialStatus: string) {
     queryFn: async () => {
       const url = buildUrl(api.generate.status.path, { jobId });
 
-      const res = await fetch(url, { credentials: "include" });
+      const res = await authedFetch(url);
       if (!res.ok) {
         throw new Error(i18n.t("errors.fetch_job_status_failed"));
       }

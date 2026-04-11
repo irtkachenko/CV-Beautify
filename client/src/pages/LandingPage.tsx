@@ -1,11 +1,14 @@
 import { motion } from "framer-motion";
 import { Sparkles, FileText, CheckCircle2, ArrowRight, Upload, Zap, Download } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { useAuth } from "@/hooks/use-auth";
 
 export default function LandingPage() {
   const { t } = useTranslation();
-  const handleLogin = () => {
-    window.location.href = "/api/login";
+  const { login, isLoggingIn } = useAuth();
+
+  const handleLogin = async () => {
+    await login();
   };
 
   return (
@@ -65,6 +68,7 @@ export default function LandingPage() {
           >
             <button
               onClick={handleLogin}
+              disabled={isLoggingIn}
               className="group flex items-center gap-3 px-8 py-4 rounded-xl font-bold text-lg text-white bg-gradient-to-r from-primary to-accent shadow-xl shadow-primary/25 hover:shadow-2xl hover:shadow-primary/30 hover:-translate-y-1 transition-all duration-300"
             >
               {t("landing.get_started")}

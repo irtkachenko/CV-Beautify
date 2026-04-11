@@ -11,6 +11,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Textarea } from "@/components/ui/textarea";
 import { useTranslation } from "react-i18next";
 import { useCvIframePreview } from "@/hooks/use-cv-iframe-preview";
+import { authedFetch } from "@/lib/authed-fetch";
 
 const AI_EDIT_PROMPT_MIN_LENGTH = 10;
 const AI_EDIT_PROMPT_MAX_LENGTH = 1000;
@@ -50,9 +51,7 @@ export default function CvViewPage() {
       setIsLoading(true);
       setError(null);
 
-      const response = await fetch(`/api/resumes/${id}`, {
-        credentials: "include",
-      });
+      const response = await authedFetch(`/api/resumes/${id}`);
 
       if (!response.ok) {
         if (response.status === 404) {
@@ -218,9 +217,8 @@ export default function CvViewPage() {
     try {
       setIsSubmittingAiEdit(true);
       const url = buildUrl(api.resumes.aiEdit.path, { id: cvData.id });
-      const response = await fetch(url, {
+      const response = await authedFetch(url, {
         method: api.resumes.aiEdit.method,
-        credentials: "include",
         headers: {
           "Content-Type": "application/json",
         },

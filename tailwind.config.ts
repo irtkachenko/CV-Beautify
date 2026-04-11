@@ -2,7 +2,11 @@ import type { Config } from "tailwindcss";
 
 export default {
   darkMode: ["class"],
-  content: ["./client/index.html", "./client/src/**/*.{js,jsx,ts,tsx}"],
+  content: [
+    "./client/index.html",
+    "./client/src/**/*.{js,jsx,ts,tsx}",
+    "./app/**/*.{js,jsx,ts,tsx}",
+  ],
   theme: {
     extend: {
       borderRadius: {
@@ -107,7 +111,7 @@ export default {
     require("tailwindcss-animate"), 
     require("@tailwindcss/typography"),
     // Add scrollbar-hide plugin
-    function({ addUtilities }: { addUtilities: (utilities: Record<string, Record<string, string>>) => void }) {
+    function({ addUtilities }: { addUtilities: (utilities: Record<string, any>) => void }) {
       addUtilities({
         '.scrollbar-hide': {
           '-ms-overflow-style': 'none',

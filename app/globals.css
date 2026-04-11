@@ -1,0 +1,109 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --font-sans: 'Plus Jakarta Sans', sans-serif;
+    --font-display: 'Outfit', sans-serif;
+
+    /* Modern SaaS Color Palette */
+    --background: 210 40% 98%;
+    --foreground: 222 47% 11%;
+
+    /* Vibrant Violet/Indigo Primary */
+    --primary: 250 84% 54%;
+    --primary-foreground: 210 40% 98%;
+
+    --secondary: 214 32% 91%;
+    --secondary-foreground: 222 47% 11%;
+
+    --muted: 214 32% 91%;
+    --muted-foreground: 215 16% 47%;
+
+    --accent: 280 83% 58%;
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 250 84% 54%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+
+    --radius: 1rem;
+  }
+
+  .dark {
+    --background: 222 47% 7%;
+    --foreground: 210 40% 98%;
+
+    --primary: 250 84% 64%;
+    --primary-foreground: 210 40% 98%;
+
+    --secondary: 217 32% 17%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 217 32% 17%;
+    --muted-foreground: 215 20% 65%;
+
+    --accent: 280 83% 68%;
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 62% 30%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 217 32% 17%;
+    --input: 217 32% 17%;
+    --ring: 250 84% 64%;
+
+    --card: 222 47% 9%;
+    --card-foreground: 210 40% 98%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground antialiased selection:bg-primary/20 selection:text-primary;
+    font-family: var(--font-sans);
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-display);
+    @apply tracking-tight;
+  }
+}
+
+@layer utilities {
+  .font-display {
+    font-family: var(--font-display);
+  }
+  .font-sans {
+    font-family: var(--font-sans);
+  }
+
+  /* Glassmorphism utilities */
+  .glass {
+    @apply bg-white/70 dark:bg-black/40 backdrop-blur-xl border border-white/20 dark:border-white/10;
+  }
+  .glass-card {
+    @apply bg-card/60 backdrop-blur-lg border border-border/50 shadow-xl shadow-black/5 dark:shadow-black/20;
+  }
+
+  /* Beautiful animated background mesh */
+  .bg-mesh {
+    background-color: hsl(var(--background));
+    background-image:
+      radial-gradient(at 0% 0%, hsla(var(--primary) / 0.15) 0px, transparent 50%),
+      radial-gradient(at 100% 0%, hsla(var(--accent) / 0.15) 0px, transparent 50%),
+      radial-gradient(at 100% 100%, hsla(var(--primary) / 0.15) 0px, transparent 50%),
+      radial-gradient(at 0% 100%, hsla(var(--accent) / 0.15) 0px, transparent 50%);
+  }
+}

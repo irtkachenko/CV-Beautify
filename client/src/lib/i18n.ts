@@ -26,7 +26,7 @@ const resources = {
                     "generation": "Instant high-quality PDF generation"
                 },
                 "get_started": "Get Started for Free",
-                "secure_login": "Secure login with Replit Auth",
+                "secure_login": "Secure login with Supabase Auth",
                 "how_it_works": {
                     "title": "How it works",
                     "step1_title": "Upload your .docx",
@@ -242,7 +242,7 @@ const resources = {
                     "generation": "Миттєва генерація високоякісного PDF"
                 },
                 "get_started": "Почати безкоштовно",
-                "secure_login": "Безпечний вхід через Replit Auth",
+                "secure_login": "Безпечний вхід через Supabase Auth",
                 "how_it_works": {
                     "title": "Як це працює",
                     "step1_title": "Завантажте ваш .docx",
@@ -452,3 +452,4 @@ i18n
     });
 
 export default i18n;
+

@@ -4,6 +4,7 @@ import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
 import i18n from "@/lib/i18n";
 import { parseWithLogging } from "@/utils/validation";
+import { authedFetch } from "@/lib/authed-fetch";
 
 export function useMyResumes() {
   return useQuery({
@@ -11,7 +12,7 @@ export function useMyResumes() {
     staleTime: 2 * 60 * 1000, // 2 minutes - resumes change frequently
     refetchOnMount: "always",
     queryFn: async () => {
-      const res = await fetch(api.resumes.list.path, { credentials: "include" });
+      const res = await authedFetch(api.resumes.list.path);
       if (!res.ok) {
         if (res.status === 401) throw new Error("Unauthorized");
         throw new Error("Failed to fetch resumes");
@@ -30,9 +31,8 @@ export function useDeleteResume() {
   return useMutation({
     mutationFn: async (id: number) => {
       const url = buildUrl(api.resumes.delete.path, { id });
-      const res = await fetch(url, { 
+      const res = await authedFetch(url, { 
         method: api.resumes.delete.method,
-        credentials: "include" 
       });
       
       if (!res.ok) {

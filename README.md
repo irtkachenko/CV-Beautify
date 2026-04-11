@@ -26,7 +26,7 @@ An AI-powered web app that generates polished, professional resumes from any upl
 | **Database** | PostgreSQL + Drizzle ORM |
 | **AI** | OpenAI API (GPT-4o) |
 | **PDF** | Native browser print flow |
-| **Auth** | Passport.js (local strategy) + express-session |
+| **Auth** | Supabase Auth (OAuth/JWT) |
 | **File Parsing** | mammoth (DOCX), native PDF text extraction |
 | **Routing** | wouter (client), Express (server) |
 | **State** | TanStack React Query |
@@ -44,7 +44,10 @@ To run your own instance, fork the project on Replit and set the following secre
 |---|---|
 | `DATABASE_URL` | PostgreSQL connection string |
 | `OPENAI_API_KEY` | OpenAI API key (`sk-...`) |
-| `SESSION_SECRET` | Random string for session signing |
+| `SUPABASE_URL` | Supabase project URL (server-side) |
+| `SUPABASE_ANON_KEY` | Supabase anon key (server-side JWT verification) |
+| `VITE_SUPABASE_URL` | Supabase project URL (client-side) |
+| `VITE_SUPABASE_ANON_KEY` | Supabase anon key (client-side) |
 
 Replit handles the rest automatically on every run.
 
@@ -71,7 +74,10 @@ Replit handles the rest automatically on every run.
 ├── shared/
 │   └── schema.ts             # Drizzle schema + Zod validation types
 └── docs/
-    └── PDF_GENERATOR.md      # PDF generation flow documentation
+    ├── README.md             # Documentation index
+    ├── pdf-generator.md      # PDF generation flow documentation
+    ├── migration-to-supabase.md
+    └── client-requirements.md
 ```
 
 ---
@@ -102,6 +108,10 @@ Browser Save-to-PDF renders the final document with preserved styles
 
 ## 📄 PDF Generation
 
-See **[docs/PDF_GENERATOR.md](docs/PDF_GENERATOR.md)** for implementation details of the current PDF generation flow.
+See **[docs/pdf-generator.md](docs/pdf-generator.md)** for implementation details of the current PDF generation flow.
 
+## 📚 Documentation
 
+- **Docs index**: [docs/README.md](docs/README.md)
+- **Supabase migration**: [docs/migration-to-supabase.md](docs/migration-to-supabase.md)
+- **Client requirements**: [docs/client-requirements.md](docs/client-requirements.md)

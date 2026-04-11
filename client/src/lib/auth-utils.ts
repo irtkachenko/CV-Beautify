@@ -1,3 +1,5 @@
+import { supabase } from "@/lib/supabase";
+
 export function isUnauthorizedError(error: Error): boolean {
   return /^401: .*Unauthorized/.test(error.message);
 }
@@ -11,7 +13,13 @@ export function redirectToLogin(toast?: (options: { title: string; description: 
       variant: "destructive",
     });
   }
+
   setTimeout(() => {
-    window.location.href = "/api/login";
+    void supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: `${window.location.origin}/`,
+      },
+    });
   }, 500);
 }

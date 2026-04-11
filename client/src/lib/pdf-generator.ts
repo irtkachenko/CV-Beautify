@@ -1,6 +1,7 @@
-﻿import html2pdf from 'html2pdf.js';
+import html2pdf from 'html2pdf.js';
+import { authedFetch } from './authed-fetch';
 
-// ─── Interfaces ───────────────────────────────────────────────────────────────
+// --- Interfaces ---------------------------------------------------------------
 
 interface PdfFromUrlOptions {
   url?: string;
@@ -17,7 +18,7 @@ interface PdfFromElementOptions {
   onLoadingChange?: (loading: boolean) => void;
 }
 
-// ─── Constants ────────────────────────────────────────────────────────────────
+// --- Constants ----------------------------------------------------------------
 
 /**
  * A4 page height in CSS pixels at 794px width (210mm at ~96dpi).
@@ -36,7 +37,7 @@ const PAGE_BOTTOM_SAFE_PX = 80;
  */
 const PAGE_TOP_PADDING_PX = 60;
 
-// ─── Core layout helpers ──────────────────────────────────────────────────────
+// --- Core layout helpers ------------------------------------------------------
 
 /**
  * Walk the offsetParent chain to compute an element's top position
@@ -84,7 +85,7 @@ function getBreakCandidates(container: HTMLElement): HTMLElement[] {
   return candidates;
 }
 
-// ─── Page break insertion ─────────────────────────────────────────────────────
+// --- Page break insertion -----------------------------------------------------
 
 /**
  * THE KEY INSIGHT:
@@ -97,7 +98,7 @@ function getBreakCandidates(container: HTMLElement): HTMLElement[] {
  *   - The block's new offsetTop = currentPageEnd + PAGE_TOP_PADDING_PX
  *   - All subsequent blocks' positions are exact multiples of A4_HEIGHT_PX + some offset
  *   - html2pdf crops the canvas every 1123px and gets exactly the right content
- *     on every page — NO mismatch between our math and html2pdf's math.
+ *     on every page � NO mismatch between our math and html2pdf's math.
  *
  * Without this, 0-height markers at y=900 would cause html2pdf to still split
  * at y=1123 (its natural A4 boundary), making the second page start wrong.
@@ -131,7 +132,7 @@ function insertPageBreaks(
 
     if (!crossesSafeZone || isAlreadyAtTop) continue;
 
-    // ── Insert spacer that fills the rest of the current page ──────────────
+    // -- Insert spacer that fills the rest of the current page --------------
     // Height = how much of the current page is still "empty" after blockTop
     const spacerHeight = currentPageEnd - blockTop;
 
@@ -147,7 +148,7 @@ function insertPageBreaks(
       `padding:0 !important;` +
       `box-sizing:border-box !important;`;
 
-    // ── Insert top-padding spacer at the top of the new page ───────────────
+    // -- Insert top-padding spacer at the top of the new page ---------------
     const topSpacer = doc.createElement('div');
     topSpacer.className = 'pdf-page-top-spacer';
     topSpacer.style.cssText =
@@ -168,7 +169,7 @@ function insertPageBreaks(
   }
 }
 
-// ─── Background fill ──────────────────────────────────────────────────────────
+// --- Background fill ----------------------------------------------------------
 
 /**
  * After all breaks are inserted, round the container height UP to the next
@@ -180,10 +181,10 @@ function fillLastPageBackground(
   container: HTMLElement,
   bgColor: string,
 ): number {
-  // Measure AFTER page breaks are inserted — this is the true content height
+  // Measure AFTER page breaks are inserted � this is the true content height
   const totalHeight = container.scrollHeight;
   const pageCount = Math.ceil(totalHeight / A4_HEIGHT_PX);
-  // This is the canvas height we WANT — an exact multiple of the A4 page pixel height
+  // This is the canvas height we WANT � an exact multiple of the A4 page pixel height
   const targetHeight = pageCount * A4_HEIGHT_PX;
 
   console.log('[PDF] fillLastPageBackground', { totalHeight, pageCount, targetHeight, bgColor });
@@ -195,11 +196,11 @@ function fillLastPageBackground(
 
   // Return targetHeight so the caller can pass it to html2canvas as `height`.
   // html2canvas will render exactly this many pixels and fill any gap at the
-  // bottom with `backgroundColor` — this is more reliable than DOM padding tricks.
+  // bottom with `backgroundColor` � this is more reliable than DOM padding tricks.
   return targetHeight;
 }
 
-// ─── PDF options ──────────────────────────────────────────────────────────────
+// --- PDF options --------------------------------------------------------------
 
 function buildPdfOptions(
   filename: string,
@@ -210,7 +211,7 @@ function buildPdfOptions(
   return {
     margin: 0,
     filename,
-    // NO explicit pagebreak mode — we rely on the spacers pushing content
+    // NO explicit pagebreak mode � we rely on the spacers pushing content
     // to exact A4 boundaries, so html2pdf's natural 1123px slicing is correct.
     pagebreak: { mode: [] as any },
     image: { type: 'jpeg' as const, quality: 0.98 },
@@ -235,7 +236,7 @@ function buildPdfOptions(
   };
 }
 
-// ─── Loading overlay ──────────────────────────────────────────────────────────
+// --- Loading overlay ----------------------------------------------------------
 
 function createLoadingOverlay() {
   const overlay = document.createElement('div');
@@ -285,7 +286,7 @@ function createLoadingOverlay() {
   return { overlay, statusText, spinStyle };
 }
 
-// ─── Public: generate from URL ────────────────────────────────────────────────
+// --- Public: generate from URL ------------------------------------------------
 
 export async function generatePdfFromUrl(options: PdfFromUrlOptions): Promise<void> {
   const {
@@ -303,7 +304,7 @@ export async function generatePdfFromUrl(options: PdfFromUrlOptions): Promise<vo
   // Fetch HTML source
   let html: string;
   if (url) {
-    const res = await fetch(url);
+    const res = await authedFetch(url);
     if (!res.ok) throw new Error(`Failed to fetch template: ${res.status}`);
     html = await res.text();
   } else {
@@ -313,7 +314,7 @@ export async function generatePdfFromUrl(options: PdfFromUrlOptions): Promise<vo
   const { overlay, statusText, spinStyle } = createLoadingOverlay();
   document.body.appendChild(overlay);
 
-  // Off-screen iframe — fixed position keeps it in the layout flow but invisible.
+  // Off-screen iframe � fixed position keeps it in the layout flow but invisible.
   // We use a large height so the entire multi-page document can render at once.
   const iframe = document.createElement('iframe');
   iframe.style.cssText = `
@@ -356,11 +357,11 @@ export async function generatePdfFromUrl(options: PdfFromUrlOptions): Promise<vo
         const bgColor =
           iframeWindow.getComputedStyle(container).backgroundColor || '#ffffff';
 
-        // ── Main logic ──────────────────────────────────────────────────────
+        // -- Main logic ------------------------------------------------------
         insertPageBreaks(iframeDoc, container, bgColor);
         const canvasHeight = fillLastPageBackground(iframeDoc, container, bgColor);
 
-        // Redundant safety — ensure body/html share the background
+        // Redundant safety � ensure body/html share the background
         iframeDoc.body.style.backgroundColor = bgColor;
         iframeDoc.documentElement.style.backgroundColor = bgColor;
 
@@ -399,7 +400,7 @@ export async function generatePdfFromUrl(options: PdfFromUrlOptions): Promise<vo
   };
 }
 
-// ─── Public: generate from element ───────────────────────────────────────────
+// --- Public: generate from element -------------------------------------------
 
 export async function generatePdfFromElement(
   options: PdfFromElementOptions,
@@ -438,3 +439,4 @@ export async function generatePdfFromElement(
     throw err;
   }
 }
+

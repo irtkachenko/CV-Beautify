@@ -1,10 +1,16 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
 import type { User } from "@shared/models/auth";
+import { supabase } from "@/lib/supabase";
+import { authedFetch } from "@/lib/authed-fetch";
 
 async function fetchUser(): Promise<User | null> {
-  const response = await fetch("/api/auth/user", {
-    credentials: "include",
-  });
+  const { data } = await supabase.auth.getSession();
+  if (!data.session) {
+    return null;
+  }
+
+  const response = await authedFetch("/api/auth/user");
 
   if (response.status === 401) {
     return null;
@@ -17,22 +23,22 @@ async function fetchUser(): Promise<User | null> {
   return response.json();
 }
 
-async function logout(): Promise<void> {
-  try {
-    const response = await fetch("/api/logout", {
-      method: "GET",
-      credentials: "include",
-    });
-    
-    if (response.ok) {
-      // Після успішного logout на сервері, перезавантажуємо сторінку
-      window.location.href = "/";
-    }
-  } catch (error) {
-    console.error("Logout failed:", error);
-    // У разі помилки, все одно перезавантажуємо на головну
-    window.location.href = "/";
+async function loginWithGoogle(): Promise<void> {
+  const { error } = await supabase.auth.signInWithOAuth({
+    provider: "google",
+    options: {
+      redirectTo: `${window.location.origin}/`,
+    },
+  });
+
+  if (error) {
+    throw error;
   }
+}
+
+async function logout(): Promise<void> {
+  await supabase.auth.signOut();
+  window.location.href = "/";
 }
 
 export function useAuth() {
@@ -41,8 +47,20 @@ export function useAuth() {
     queryKey: ["/api/auth/user"],
     queryFn: fetchUser,
     retry: false,
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    staleTime: 1000 * 60 * 5,
   });
+
+  useEffect(() => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(() => {
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [queryClient]);
 
   const logoutMutation = useMutation({
     mutationFn: logout,
@@ -51,10 +69,16 @@ export function useAuth() {
     },
   });
 
+  const loginMutation = useMutation({
+    mutationFn: loginWithGoogle,
+  });
+
   return {
     user,
     isLoading,
     isAuthenticated: !!user,
+    login: loginMutation.mutateAsync,
+    isLoggingIn: loginMutation.isPending,
     logout: logoutMutation.mutate,
     isLoggingOut: logoutMutation.isPending,
   };
