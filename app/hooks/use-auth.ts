@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
 import type { User } from "@shared/models/auth";
 import { supabase } from "../../lib/supabase";
-import { authedFetch } from "@/lib/authed-fetch";
+import { authedFetch } from "../../lib/authed-fetch";
 
 async function fetchUser(): Promise<User | null> {
   const { data } = await supabase.auth.getSession();

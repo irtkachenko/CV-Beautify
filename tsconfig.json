@@ -35,11 +35,6 @@
       "next"
     ],
     "paths": {
-      "@/*": [
-        "./lib/*",
-        "./app/*",
-        "./client/src/*"
-      ],
       "@shared/*": [
         "./shared/*"
       ]
