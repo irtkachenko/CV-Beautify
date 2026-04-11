@@ -202,10 +202,10 @@ export function CvStatusCard({ cv }: { cv: GeneratedCvResponse }) {
           {/* Info Area */}
           <div className="p-4 lg:p-5 h-[110px] lg:h-[110px] flex flex-col justify-between bg-card">
             <div>
-              <div className="flex justify-between items-start mb-2">
-                <h3 className="font-display font-bold text-foreground line-clamp-1">{displayName}</h3>
+              <div className="flex justify-between items-start mb-2 gap-2">
+                <h3 className="font-display font-bold text-foreground line-clamp-1 min-w-0 flex-1 truncate">{displayName}</h3>
                 {/* Status Badge */}
-                <div className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${isProcessing ? 'bg-amber-500/10 text-amber-600 border border-amber-500/20' :
+                <div className={`flex-shrink-0 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider whitespace-nowrap ${isProcessing ? 'bg-amber-500/10 text-amber-600 border border-amber-500/20' :
                   isComplete ? 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20' :
                     'bg-red-500/10 text-red-600 border border-red-500/20'
                   }`}>

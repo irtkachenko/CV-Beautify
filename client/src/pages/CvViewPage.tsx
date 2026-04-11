@@ -169,9 +169,12 @@ export default function CvViewPage() {
 
     try {
       setIsGeneratingPdf(true);
+      const baseName = cvData.name
+        ? cvData.name.replace(/\.docx$/i, "").replace(/[^\w\s-]/g, "").trim() || `cv-${cvData.id}`
+        : `cv-${cvData.id}`;
       await generatePdfFromUrl({
         url: pdfUrl,
-        filename: `cv-${cvData.id}.pdf`,
+        filename: `${baseName}.pdf`,
         windowWidth: 800,
         contentWidthMm: 190,
         autoPrint: true,

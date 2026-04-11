@@ -447,7 +447,11 @@ i18n
         },
         detection: {
             order: ['localStorage', 'navigator'],
-            caches: ['localStorage']
+            caches: ['localStorage'],
+            convertDetectedLanguage: (lng: string) => {
+                if (lng === 'uk' || lng.startsWith('uk-')) return 'ua';
+                return lng;
+            }
         }
     });
 
