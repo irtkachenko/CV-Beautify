@@ -1,5 +1,8 @@
+"use client";
+
 import React from "react";
-import { Link, useLocation } from "wouter";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useAuth } from "@/hooks/use-auth";
 import { FileText, LogOut, Sparkles, LayoutGrid, Menu, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -8,7 +11,7 @@ import { useTranslation } from "react-i18next";
 export function Navbar() {
   const { t, i18n } = useTranslation();
   const { user, logout } = useAuth();
-  const [location] = useLocation();
+  const pathname = usePathname();
   const [isMenuOpen, setIsMenuOpen] = React.useState(false);
 
   if (!user) return null;
@@ -32,7 +35,7 @@ export function Navbar() {
           <div className="hidden md:flex items-center space-x-1">
             <Link
               href="/"
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200 flex items-center gap-2 ${location === "/"
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200 flex items-center gap-2 ${pathname === "/"
                 ? "bg-primary/10 text-primary"
                 : "text-muted-foreground hover:bg-secondary hover:text-foreground"
                 }`}
@@ -42,7 +45,7 @@ export function Navbar() {
             </Link>
             <Link
               href="/my-resumes"
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200 flex items-center gap-2 ${location === "/my-resumes"
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200 flex items-center gap-2 ${pathname === "/my-resumes"
                 ? "bg-primary/10 text-primary"
                 : "text-muted-foreground hover:bg-secondary hover:text-foreground"
                 }`}
@@ -119,7 +122,7 @@ export function Navbar() {
               <Link
                 href="/"
                 onClick={() => setIsMenuOpen(false)}
-                className={`flex items-center gap-3 px-4 py-3 rounded-xl text-base font-medium transition-all ${location === "/"
+                className={`flex items-center gap-3 px-4 py-3 rounded-xl text-base font-medium transition-all ${pathname === "/"
                   ? "bg-primary/10 text-primary"
                   : "text-muted-foreground hover:bg-secondary hover:text-foreground"
                   }`}
@@ -130,7 +133,7 @@ export function Navbar() {
               <Link
                 href="/my-resumes"
                 onClick={() => setIsMenuOpen(false)}
-                className={`flex items-center gap-3 px-4 py-3 rounded-xl text-base font-medium transition-all ${location === "/my-resumes"
+                className={`flex items-center gap-3 px-4 py-3 rounded-xl text-base font-medium transition-all ${pathname === "/my-resumes"
                   ? "bg-primary/10 text-primary"
                   : "text-muted-foreground hover:bg-secondary hover:text-foreground"
                   }`}

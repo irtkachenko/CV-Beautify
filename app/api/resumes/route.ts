@@ -1,21 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseServerClient } from "@lib/supabase-server";
+import { authenticateRequest } from "@lib/server-auth";
+
+export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
   try {
-    const authHeader = request.headers.get("authorization");
-    const token = authHeader?.replace("Bearer ", "");
-
-    if (!token) {
-      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+    const auth = await authenticateRequest(request);
+    if ("response" in auth) {
+      return auth.response;
     }
-
-    const supabase = supabaseServerClient;
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-
-    if (authError || !user) {
-      return NextResponse.json({ message: "Invalid token" }, { status: 401 });
-    }
+    const { supabase, userId } = auth;
 
     const { data: cvs, error } = await supabase
       .from("generated_cvs")
@@ -29,7 +23,7 @@ export async function GET(request: NextRequest) {
           description
         )
       `)
-      .eq("user_id", user.id)
+      .eq("user_id", userId)
       .order("updated_at", { ascending: false });
 
     if (error) {
@@ -46,19 +40,11 @@ export async function GET(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
-    const authHeader = request.headers.get("authorization");
-    const token = authHeader?.replace("Bearer ", "");
-
-    if (!token) {
-      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+    const auth = await authenticateRequest(request);
+    if ("response" in auth) {
+      return auth.response;
     }
-
-    const supabase = supabaseServerClient;
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-
-    if (authError || !user) {
-      return NextResponse.json({ message: "Invalid token" }, { status: 401 });
-    }
+    const { supabase, userId } = auth;
 
     const url = new URL(request.url);
     const id = url.searchParams.get("id");
@@ -83,7 +69,7 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ message: "CV not found" }, { status: 404 });
     }
 
-    if (cv.user_id !== user.id) {
+    if (cv.user_id !== userId) {
       return NextResponse.json({ message: "Access denied" }, { status: 403 });
     }
 

@@ -58,10 +58,10 @@ export const insertGeneratedCvSchema = createInsertSchema(generatedCvs).omit({
 
 // Base types
 export type CvTemplate = typeof cvTemplates.$inferSelect;
-export type InsertCvTemplate = z.infer<typeof insertCvTemplateSchema>;
+export type InsertCvTemplate = typeof cvTemplates.$inferInsert;
 
 export type GeneratedCv = typeof generatedCvs.$inferSelect;
-export type InsertGeneratedCv = z.infer<typeof insertGeneratedCvSchema>;
+export type InsertGeneratedCv = typeof generatedCvs.$inferInsert;
 
 // Request types
 export interface GenerateCvRequest {

@@ -1,32 +1,19 @@
-# AI Workflow (Cursor/Windsurf)
+# AI Workflow
 
-## Goal
+## Rule source
 
-Use AI as a force multiplier while keeping the repo maintainable and correct.
+Use `AGENTS.md` as the canonical AI rule set in this repository.
 
-## Iteration style
+Editor-specific adapters:
 
-- Small, reviewable changes.
-- Prefer incremental PRs.
-- Avoid large refactors unless explicitly requested.
+- `.cursorrules`
+- `.windsurf/rules.md`
+- `.github/copilot-instructions.md`
 
-## When to trust AI vs stop
+## Workflow expectations
 
-- Trust AI for:
-  - boilerplate, wiring, repetitive code, doc restructuring.
-- Stop AI and verify manually for:
-  - auth/security, billing, data access (RLS), migrations,
-  - anything that can delete or corrupt user data,
-  - complex concurrency/state.
-
-## Definition of done
-
-- Build/typecheck passes.
-- No broken imports.
-- Docs updated when behavior changes.
-
-## Files that should stay up to date
-
-- `project.md`
-- `.cursorrules` and/or `.windsurf/*`
-- `docs/README.md`
+1. Iterate in small, reviewable steps.
+2. Search before introducing new APIs/files.
+3. Validate auth/RLS/security-sensitive changes manually.
+4. Update docs for behavior or architecture changes.
+5. Keep API contract and route implementation aligned.

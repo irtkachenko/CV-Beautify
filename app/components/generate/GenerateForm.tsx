@@ -1,0 +1,73 @@
+"use client";
+
+import { Upload, X, Loader2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import type React from "react";
+
+type GenerateFormProps = {
+  onSubmit: (e: React.FormEvent) => Promise<void> | void;
+  selectedFile: File | null;
+  onFileSelect: (file: File) => void;
+  onFileRemove: () => void;
+  isPending: boolean;
+};
+
+export function GenerateForm({
+  onSubmit,
+  selectedFile,
+  onFileSelect,
+  onFileRemove,
+  isPending,
+}: GenerateFormProps) {
+  const { t } = useTranslation();
+
+  return (
+    <form onSubmit={onSubmit} className="w-full md:w-1/2 p-6 flex flex-col gap-4">
+      <h3 className="text-xl font-bold text-foreground">{t("modal.upload_cv") || "Upload CV"}</h3>
+      <p className="text-sm text-muted-foreground">
+        {t("modal.upload_hint") || "Upload a .docx file to generate a polished CV."}
+      </p>
+
+      <label className="border-2 border-dashed border-border rounded-xl p-5 cursor-pointer hover:border-primary/40 transition-colors">
+        <input
+          type="file"
+          accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+          className="hidden"
+          disabled={isPending}
+          onChange={(e) => {
+            const file = e.currentTarget.files?.[0];
+            if (file) onFileSelect(file);
+          }}
+        />
+        <div className="flex items-center gap-3 text-sm text-foreground">
+          <Upload className="w-4 h-4" />
+          <span>{selectedFile ? selectedFile.name : t("modal.choose_file") || "Choose .docx file"}</span>
+        </div>
+      </label>
+
+      {selectedFile ? (
+        <div className="flex items-center justify-between rounded-lg border border-border bg-secondary/30 px-3 py-2 text-sm">
+          <span className="truncate mr-2">{selectedFile.name}</span>
+          <button
+            type="button"
+            onClick={onFileRemove}
+            disabled={isPending}
+            className="p-1 rounded hover:bg-secondary"
+            aria-label="Remove file"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      ) : null}
+
+      <button
+        type="submit"
+        disabled={isPending || !selectedFile}
+        className="mt-2 inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 font-semibold text-primary-foreground disabled:opacity-50"
+      >
+        {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+        <span>{isPending ? t("common.generating") || "Generating..." : t("common.generate") || "Generate CV"}</span>
+      </button>
+    </form>
+  );
+}

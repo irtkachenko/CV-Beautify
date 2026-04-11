@@ -1,25 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseServerClient } from "@lib/supabase-server";
-import DOMPurify from "dompurify";
+import { authenticateRequest } from "@lib/server-auth";
+import createDOMPurify from "dompurify";
+import { JSDOM } from "jsdom";
+
+const domPurify = createDOMPurify(new JSDOM("").window as any);
+export const dynamic = "force-dynamic";
 
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    const authHeader = request.headers.get("authorization");
-    const token = authHeader?.replace("Bearer ", "");
-
-    if (!token) {
-      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+    const auth = await authenticateRequest(request);
+    if ("response" in auth) {
+      return auth.response;
     }
-
-    const supabase = supabaseServerClient;
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-
-    if (authError || !user) {
-      return NextResponse.json({ message: "Invalid token" }, { status: 401 });
-    }
+    const { supabase, userId } = auth;
 
     const cvId = parseInt(params.id, 10);
     if (isNaN(cvId)) {
@@ -36,7 +32,7 @@ export async function GET(
       return NextResponse.json({ message: "CV not found" }, { status: 404 });
     }
 
-    if (cv.user_id !== user.id) {
+    if (cv.user_id !== userId) {
       return NextResponse.json({ message: "Access denied" }, { status: 403 });
     }
 
@@ -45,7 +41,7 @@ export async function GET(
     }
 
     // Sanitize HTML
-    const safeHtml = DOMPurify.sanitize(cv.html_content, {
+    const safeHtml = domPurify.sanitize(cv.html_content, {
       ALLOWED_TAGS: ["div", "span", "p", "h1", "h2", "h3", "h4", "h5", "h6", "ul", "ol", "li", "a", "strong", "em", "u", "br", "hr", "img", "table", "thead", "tbody", "tr", "td", "th"],
       ALLOWED_ATTR: ["href", "src", "alt", "class", "style", "id"],
     });

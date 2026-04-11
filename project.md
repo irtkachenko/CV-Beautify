@@ -2,42 +2,35 @@
 
 ## Product
 
-CV Builder AI: web app that turns an uploaded CV into a polished resume using templates + AI rewriting, and lets the user download a PDF.
+CV Builder AI is a web app that turns uploaded CV documents into polished resume outputs using AI and templates.
 
-## Stack (current repo)
+## Current stack
 
-- TypeScript
-- React + Vite (client)
-- Node.js + Express (server)
-- Supabase Auth
-- PostgreSQL
+- Next.js 14 + React 18 + TypeScript
+- Supabase Auth + Postgres
+- TanStack Query
+- TailwindCSS / shadcn-ui
 
 ## Repo layout
 
-- `client/` - frontend
-- `server/` - backend
-- `shared/` - shared types/helpers
-- `database/` - migrations/schema
-- `docs/` - documentation
+- `app/` - Next.js App Router UI and API routes
+- `lib/` - shared runtime utilities (supabase, fetch, pdf, i18n)
+- `shared/` - shared models and API contract types
+- `database/migrations/` - SQL schema, policies, triggers
+- `docs/` - developer and operations docs
 
-## Working agreements (AI-assisted)
+## Working agreements
 
-- Keep changes small and shippable.
-- Prefer explicit types and runtime validation at boundaries.
-- Don’t invent APIs/files. If unsure, search the codebase first.
+- Keep changes small and reviewable.
+- Validate auth/RLS changes manually.
+- Keep API contracts in sync between `shared/routes.ts` and `app/api/*`.
+- Update docs when behavior changes.
 
-## PR / commit conventions
+## AI rules
 
-- One logical change per PR.
-- Descriptive commits.
-- Include:
-  - what changed,
-  - why,
-  - how to verify.
+Canonical AI rules are in `AGENTS.md`.
+Adapters:
 
-## Code review checklist (AI-generated code)
-
-- No hidden breaking changes.
-- Errors handled (especially network/auth).
-- Security-sensitive code double-checked (Supabase policies, auth middleware).
-- Types align with actual runtime shapes.
+- `.cursorrules`
+- `.windsurf/rules.md`
+- `.github/copilot-instructions.md`

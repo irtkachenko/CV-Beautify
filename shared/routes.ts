@@ -56,7 +56,7 @@ export const api = {
   generate: {
     start: {
       method: 'POST' as const,
-      path: '/api/generate' as const,
+      path: '/api/generate/start' as const,
       input: z.object({
         templateId: z.number().int().positive("Template ID must be a positive integer"),
         file: docxFileSchema,
@@ -84,7 +84,7 @@ export const api = {
   resumes: {
     list: {
       method: 'GET' as const,
-      path: '/api/my-resumes' as const,
+      path: '/api/resumes' as const,
       responses: {
         200: z.array(z.custom<GeneratedCvResponse>()),
         401: errorSchemas.unauthorized,

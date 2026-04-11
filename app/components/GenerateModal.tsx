@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useLocation } from "wouter";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
 import { useGenerateCv } from "@/hooks/use-generate";
@@ -22,7 +22,7 @@ export function GenerateModal({ template, isOpen, onClose }: GenerateModalProps)
   const [generationPrompt, setGenerationPrompt] = useState("");
 
   const { mutate: generateCv, isPending } = useGenerateCv();
-  const [, setLocation] = useLocation();
+  const router = useRouter();
   const { toast } = useToast();
 
   const handleClose = () => {
@@ -78,7 +78,7 @@ export function GenerateModal({ template, isOpen, onClose }: GenerateModalProps)
 
           // Close modal and redirect to my-resumes
           handleClose();
-          setLocation("/my-resumes");
+          router.push("/my-resumes");
         },
         onError: (error) => {
           toast({

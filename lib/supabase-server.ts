@@ -7,9 +7,23 @@ if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error("SUPABASE_URL and SUPABASE_ANON_KEY must be set");
 }
 
-export const supabaseServerClient = createClient(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    persistSession: false,
-    autoRefreshToken: false,
-  },
-});
+const resolvedSupabaseUrl = supabaseUrl;
+const resolvedSupabaseAnonKey = supabaseAnonKey;
+
+export function createSupabaseServerClient(accessToken?: string) {
+  return createClient(resolvedSupabaseUrl, resolvedSupabaseAnonKey, {
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false,
+    },
+    global: accessToken
+      ? {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
+      : undefined,
+  });
+}
+
+export const supabaseServerClient = createSupabaseServerClient();

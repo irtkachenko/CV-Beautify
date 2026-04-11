@@ -1,9 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api, buildUrl } from "@shared/routes";
-import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
 import i18n from "@lib/i18n";
-import { parseWithLogging } from "@client/utils/validation";
+import { parseWithLogging } from "@lib/validation";
 import { authedFetch } from "@lib/authed-fetch";
 
 export function useMyResumes() {

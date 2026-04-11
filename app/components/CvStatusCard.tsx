@@ -1,9 +1,10 @@
 import { useState, useRef } from "react";
+import type React from "react";
 import { usePollingJob } from "@/hooks/use-generate";
 import { useDeleteResume } from "@/hooks/use-cvs";
 import { FileText, Loader2, CheckCircle2, AlertCircle, Calendar, Eye, Trash2 } from "lucide-react";
 import { format } from "date-fns";
-import { Link } from "wouter";
+import Link from "next/link";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import type { GeneratedCvResponse } from "@shared/routes";
 import { useTranslation } from "react-i18next";
@@ -64,8 +65,8 @@ export function CvStatusCard({ cv }: { cv: GeneratedCvResponse }) {
               </button>
             </AlertDialogCancel>
             <AlertDialogAction asChild>
-              <button
-                onClick={(e) => {
+                <button
+                onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
                   e.stopPropagation();
                   handleDelete();
                 }}

@@ -1,21 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseServerClient } from "@lib/supabase-server";
+import { authenticateRequest } from "@lib/server-auth";
+
+export const dynamic = "force-dynamic";
 
 export async function POST(request: NextRequest) {
   try {
-    const authHeader = request.headers.get("authorization");
-    const token = authHeader?.replace("Bearer ", "");
-
-    if (!token) {
-      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+    const auth = await authenticateRequest(request);
+    if ("response" in auth) {
+      return auth.response;
     }
-
-    const supabase = supabaseServerClient;
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-
-    if (authError || !user) {
-      return NextResponse.json({ message: "Invalid token" }, { status: 401 });
-    }
+    const { supabase, userId } = auth;
 
     // Parse form data (multipart for file upload)
     const formData = await request.formData();
@@ -58,7 +52,7 @@ export async function POST(request: NextRequest) {
     const { data: newCv, error: createError } = await supabase
       .from("generated_cvs")
       .insert({
-        user_id: user.id,
+        user_id: userId,
         template_id: templateIdNum,
         status: "pending",
         name: file.name.replace(/\.docx$/i, ""),

@@ -1,24 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseServerClient } from "@lib/supabase-server";
+import { authenticateRequest } from "@lib/server-auth";
+
+export const dynamic = "force-dynamic";
 
 export async function GET(
   request: NextRequest,
   { params }: { params: { jobId: string } }
 ) {
   try {
-    const authHeader = request.headers.get("authorization");
-    const token = authHeader?.replace("Bearer ", "");
-
-    if (!token) {
-      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+    const auth = await authenticateRequest(request);
+    if ("response" in auth) {
+      return auth.response;
     }
-
-    const supabase = supabaseServerClient;
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-
-    if (authError || !user) {
-      return NextResponse.json({ message: "Invalid token" }, { status: 401 });
-    }
+    const { supabase, userId } = auth;
 
     const jobId = parseInt(params.jobId, 10);
     if (isNaN(jobId)) {
@@ -44,7 +38,7 @@ export async function GET(
       return NextResponse.json({ message: "CV generation job not found" }, { status: 404 });
     }
 
-    if (cv.user_id !== user.id) {
+    if (cv.user_id !== userId) {
       return NextResponse.json({ message: "Access denied" }, { status: 403 });
     }
 

@@ -24,10 +24,12 @@ async function fetchUser(): Promise<User | null> {
 }
 
 async function loginWithGoogle(): Promise<void> {
+  const redirectTo = process.env.NEXT_PUBLIC_AUTH_REDIRECT_URL || `${window.location.origin}/`;
+
   const { error } = await supabase.auth.signInWithOAuth({
     provider: "google",
     options: {
-      redirectTo: `${window.location.origin}/`,
+      redirectTo,
     },
   });
 

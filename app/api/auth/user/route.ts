@@ -1,37 +1,35 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseServerClient } from "@lib/supabase-server";
+import { authenticateRequest } from "@lib/server-auth";
+
+export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
   try {
-    const authHeader = request.headers.get("authorization");
-    const token = authHeader?.replace("Bearer ", "");
-
-    if (!token) {
-      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+    const auth = await authenticateRequest(request);
+    if ("response" in auth) {
+      return auth.response;
     }
-
-    const supabase = supabaseServerClient;
-    const { data: { user }, error } = await supabase.auth.getUser(token);
-
-    if (error || !user) {
-      return NextResponse.json({ message: "Invalid token" }, { status: 401 });
-    }
+    const { supabase, userId, userEmail } = auth;
 
     // Fetch user profile from users table
     const { data: profile, error: profileError } = await supabase
       .from("users")
       .select("id, email, first_name, last_name, profile_image_url, created_at, updated_at")
-      .eq("id", user.id)
+      .eq("id", userId)
       .single();
 
     if (profileError) {
       // If profile doesn't exist, create it
       if (profileError.code === "PGRST116") {
+        if (!userEmail) {
+          return NextResponse.json({ message: "User email is missing" }, { status: 500 });
+        }
+
         const { data: newProfile, error: insertError } = await supabase
           .from("users")
           .insert({
-            id: user.id,
-            email: user.email,
+            id: userId,
+            email: userEmail,
           })
           .select("id, email, first_name, last_name, profile_image_url, created_at, updated_at")
           .single();
