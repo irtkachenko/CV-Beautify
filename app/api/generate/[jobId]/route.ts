@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { authenticateRequest } from "@lib/server-auth";
+import { mapGeneratedCvRow } from "@lib/cv-mappers";
 
 export const dynamic = "force-dynamic";
 
@@ -42,15 +43,16 @@ export async function GET(
       return NextResponse.json({ message: "Access denied" }, { status: 403 });
     }
 
+    const mappedCv = mapGeneratedCvRow(cv);
     const statusResponse = {
-      id: cv.id,
-      status: cv.status,
-      progress: cv.progress || undefined,
-      pdfUrl: cv.pdf_url || undefined,
-      htmlContent: cv.html_content || undefined,
-      errorMessage: cv.error_message || undefined,
-      name: cv.name || undefined,
-      template: cv.cv_templates || undefined,
+      id: mappedCv.id,
+      status: mappedCv.status,
+      progress: mappedCv.progress || undefined,
+      pdfUrl: mappedCv.pdfUrl || undefined,
+      htmlContent: mappedCv.htmlContent || undefined,
+      errorMessage: mappedCv.errorMessage || undefined,
+      name: mappedCv.name || undefined,
+      template: mappedCv.template || undefined,
     };
 
     return NextResponse.json(statusResponse);

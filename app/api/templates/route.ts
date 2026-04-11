@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseServerClient } from "@lib/supabase-server";
+import { mapTemplateRow } from "@lib/cv-mappers";
 
 export async function GET(request: NextRequest) {
   try {
@@ -14,7 +15,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ message: "Failed to fetch templates" }, { status: 500 });
     }
 
-    return NextResponse.json(templates || []);
+    return NextResponse.json((templates || []).map(mapTemplateRow));
   } catch (error) {
     console.error("Templates route error:", error);
     return NextResponse.json({ message: "Internal server error" }, { status: 500 });

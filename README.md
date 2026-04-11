@@ -10,6 +10,8 @@ AI-powered web app for generating polished CVs from uploaded documents with Supa
 - TanStack Query
 - TailwindCSS + shadcn/ui
 
+No Drizzle ORM layer is used in the current architecture.
+
 ## Quick start
 
 1. Install dependencies:
@@ -50,4 +52,5 @@ Optional:
 - [docs/README.md](docs/README.md)
 - [docs/supabase-setup.md](docs/supabase-setup.md)
 - [docs/auth-troubleshooting.md](docs/auth-troubleshooting.md)
+- [docs/request-processing-flow.md](docs/request-processing-flow.md)
 - [docs/ai-workflow.md](docs/ai-workflow.md)

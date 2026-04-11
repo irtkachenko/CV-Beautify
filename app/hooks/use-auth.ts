@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
-import type { User } from "@shared/models/auth";
+import type { User } from "@shared/types/auth";
 import { supabase } from "@lib/supabase";
 import { authedFetch } from "@lib/authed-fetch";
 

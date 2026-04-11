@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { authenticateRequest } from "@lib/server-auth";
+import { mapGeneratedCvRow } from "@lib/cv-mappers";
 
 export const dynamic = "force-dynamic";
 
@@ -42,7 +43,7 @@ export async function GET(
       return NextResponse.json({ message: "Access denied" }, { status: 403 });
     }
 
-    return NextResponse.json(cv);
+    return NextResponse.json(mapGeneratedCvRow(cv));
   } catch (error) {
     console.error("CV by ID error:", error);
     return NextResponse.json({ message: "Internal server error" }, { status: 500 });

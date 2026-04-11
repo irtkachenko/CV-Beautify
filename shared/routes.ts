@@ -1,11 +1,9 @@
 import { z } from 'zod';
 import { 
-  insertGeneratedCvSchema,
   CvTemplate,
-  GeneratedCv,
   JobStatusResponse,
   GeneratedCvResponse
-} from './schema';
+} from './types/cv';
 
 // File upload validation schema
 export const docxFileSchema = z.object({

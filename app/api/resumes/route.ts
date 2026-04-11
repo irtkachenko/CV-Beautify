@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { authenticateRequest } from "@lib/server-auth";
+import { mapGeneratedCvRow } from "@lib/cv-mappers";
 
 export const dynamic = "force-dynamic";
 
@@ -31,7 +32,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ message: "Failed to fetch resumes" }, { status: 500 });
     }
 
-    return NextResponse.json(cvs || []);
+    return NextResponse.json((cvs || []).map(mapGeneratedCvRow));
   } catch (error) {
     console.error("Resumes route error:", error);
     return NextResponse.json({ message: "Internal server error" }, { status: 500 });

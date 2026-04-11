@@ -15,7 +15,7 @@ CV Builder AI is a web app that turns uploaded CV documents into polished resume
 
 - `app/` - Next.js App Router UI and API routes
 - `lib/` - shared runtime utilities (supabase, fetch, pdf, i18n)
-- `shared/` - shared models and API contract types
+- `shared/` - API contracts and canonical domain types
 - `database/migrations/` - SQL schema, policies, triggers
 - `docs/` - developer and operations docs
 
