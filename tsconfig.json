@@ -37,8 +37,7 @@
     "paths": {
       "@/*": [
         "./lib/*",
-        "./app/*",
-        "./client/src/*"
+        "./app/*"
       ],
       "@shared/*": [
         "./shared/*"
