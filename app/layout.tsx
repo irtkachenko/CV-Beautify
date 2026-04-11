@@ -3,8 +3,8 @@ import type { Metadata } from "next";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/toaster";
-import { queryClient } from "@/lib/queryClient";
-import { I18nProvider } from "@/components/i18n-provider";
+import { queryClient } from "../lib/queryClient";
+import { I18nProvider } from "./components/i18n-provider";
 
 export const metadata: Metadata = {
   title: "CV Beautify",
