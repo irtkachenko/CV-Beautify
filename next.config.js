@@ -1,12 +1,11 @@
+const path = require('path');
+const TsconfigPathsPlugin = require('tsconfig-paths-webpack-plugin');
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   webpack: (config) => {
-    config.resolve.alias = {
-      ...config.resolve.alias,
-      '@': require('path').resolve(__dirname, './lib'),
-      '@app': require('path').resolve(__dirname, './app'),
-      '@shared': require('path').resolve(__dirname, './shared'),
-    };
+    config.resolve.plugins = config.resolve.plugins || [];
+    config.resolve.plugins.push(new TsconfigPathsPlugin());
     return config;
   },
 };

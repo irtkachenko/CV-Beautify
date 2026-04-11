@@ -80,6 +80,7 @@
     "rollup": "^4.59.0",
     "tailwind-merge": "^2.6.1",
     "tailwindcss-animate": "^1.0.7",
+    "tsconfig-paths-webpack-plugin": "^4.2.0",
     "tw-animate-css": "^1.2.5",
     "vaul": "^1.1.2",
     "wouter": "^3.3.5",
