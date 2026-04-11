@@ -8,6 +8,9 @@ import { I18nProvider } from "@/components/i18n-provider";
 export const metadata: Metadata = {
   title: "CV Beautify",
   description: "AI-powered resume generator",
+  icons: {
+    icon: "/favicon.png",
+  },
 };
 
 export default function RootLayout({
@@ -17,7 +20,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body>
+      <body className="font-sans antialiased" suppressHydrationWarning={true}>
         <QueryProvider>
           <TooltipProvider>
             <I18nProvider>
