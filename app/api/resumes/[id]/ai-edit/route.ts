@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseServerClient, supabaseServiceRoleClient } from "@/lib/supabase-server";
+import { supabaseServerClient } from "@/lib/supabase-server";
 
 export async function POST(
   request: NextRequest,
@@ -48,8 +48,7 @@ export async function POST(
     }
 
     // Mark as processing
-    const adminSupabase = supabaseServiceRoleClient();
-    const { error: updateError } = await adminSupabase
+    const { error: updateError } = await supabase
       .from("generated_cvs")
       .update({ status: "processing", progress: "Starting AI edit..." })
       .eq("id", cvId);

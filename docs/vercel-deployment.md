@@ -34,11 +34,10 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
 ```
 SUPABASE_URL=https://your-project.supabase.co
 SUPABASE_ANON_KEY=your_anon_key
-SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
-GROQ_API_KEY=gsk_...
+GROQ_API_KEY=gsk-...
 ```
 
-**Important**: Never expose `SUPABASE_SERVICE_ROLE_KEY` or `GROQ_API_KEY` to the client.
+**Important**: Never expose `GROQ_API_KEY` to the client.
 
 ## Step 3: Deploy to Vercel
 

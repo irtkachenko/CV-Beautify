@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseServerClient, supabaseServiceRoleClient } from "@/lib/supabase-server";
+import { supabaseServerClient } from "@/lib/supabase-server";
 
 export async function POST(request: NextRequest) {
   try {
@@ -55,8 +55,7 @@ export async function POST(request: NextRequest) {
     const docxLinks: any[] = [];
 
     // Create CV generation record
-    const adminSupabase = supabaseServiceRoleClient();
-    const { data: newCv, error: createError } = await adminSupabase
+    const { data: newCv, error: createError } = await supabase
       .from("generated_cvs")
       .insert({
         user_id: user.id,

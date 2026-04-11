@@ -13,16 +13,3 @@ export const supabaseServerClient = createClient(supabaseUrl, supabaseAnonKey, {
     autoRefreshToken: false,
   },
 });
-
-export const supabaseServiceRoleClient = () => {
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!serviceRoleKey) {
-    throw new Error("SUPABASE_SERVICE_ROLE_KEY must be set for admin operations");
-  }
-  return createClient(supabaseUrl, serviceRoleKey, {
-    auth: {
-      persistSession: false,
-      autoRefreshToken: false,
-    },
-  });
-};
