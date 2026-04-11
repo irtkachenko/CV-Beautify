@@ -35,13 +35,11 @@
       "next"
     ],
     "paths": {
-      "@/*": [
-        "./lib/*",
-        "./app/*"
-      ],
-      "@shared/*": [
-        "./shared/*"
-      ]
+      "@/*": ["./app/*"],
+      "@app/*": ["./app/*"],
+      "@lib/*": ["./lib/*"],
+      "@shared/*": ["./shared/*"],
+      "@client/*": ["./client/src/*"]
     },
     "allowJs": true,
     "resolveJsonModule": true,

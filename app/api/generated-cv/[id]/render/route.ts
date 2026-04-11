@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseServerClient } from "@/lib/supabase-server";
+import { supabaseServerClient } from "@lib/supabase-server";
 import DOMPurify from "dompurify";
 
 export async function GET(

@@ -8,13 +8,13 @@ import { ArrowLeft, Download, Loader2, FileText, CheckCircle, Sparkles, AlertCir
 import { useToast } from "@/hooks/use-toast";
 import { api, buildUrl } from "@shared/routes";
 import { GeneratedCvResponse } from "@shared/schema";
-import { generatePdfFromUrl } from "@/lib/pdf-generator-fixed";
+import { generatePdfFromUrl } from "@lib/pdf-generator-fixed";
 import { usePollingJob } from "@/hooks/use-generate";
 import { useQueryClient } from "@tanstack/react-query";
 import { Textarea } from "@/components/ui/textarea";
 import { useTranslation } from "react-i18next";
 import { useCvIframePreview } from "@/hooks/use-cv-iframe-preview";
-import { authedFetch } from "@/lib/authed-fetch";
+import { authedFetch } from "@lib/authed-fetch";
 
 const AI_EDIT_PROMPT_MIN_LENGTH = 10;
 const AI_EDIT_PROMPT_MAX_LENGTH = 1000;
