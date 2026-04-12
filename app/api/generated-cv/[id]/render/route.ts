@@ -1,10 +1,30 @@
 import { NextRequest, NextResponse } from "next/server";
 import { authenticateRequest } from "@lib/server-auth";
-import createDOMPurify from "dompurify";
-import { JSDOM } from "jsdom";
 
-const domPurify = createDOMPurify(new JSDOM("").window as any);
 export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+
+type DomPurifyInstance = {
+  sanitize: (
+    dirty: string,
+    cfg?: import("dompurify").Config
+  ) => string;
+};
+
+let domPurifyPromise: Promise<DomPurifyInstance> | null = null;
+
+async function getDomPurify(): Promise<DomPurifyInstance> {
+  if (!domPurifyPromise) {
+    domPurifyPromise = (async () => {
+      const [{ default: createDOMPurify }, { JSDOM }] = await Promise.all([
+        import("dompurify"),
+        import("jsdom"),
+      ]);
+      return createDOMPurify(new JSDOM("").window as never) as DomPurifyInstance;
+    })();
+  }
+  return domPurifyPromise;
+}
 
 export async function GET(
   request: NextRequest,
@@ -39,6 +59,8 @@ export async function GET(
     if (!cv.html_content) {
       return NextResponse.json({ message: "Generated CV HTML not found" }, { status: 404 });
     }
+
+    const domPurify = await getDomPurify();
 
     // Sanitize HTML - allow style tags and semantic HTML5 tags for CV templates
     const safeHtml = domPurify.sanitize(cv.html_content, {
