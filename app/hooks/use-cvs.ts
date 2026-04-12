@@ -8,7 +8,7 @@ import { authedFetch } from "@lib/authed-fetch";
 export function useMyResumes() {
   return useQuery({
     queryKey: [api.resumes.list.path],
-    staleTime: 2 * 60 * 1000, // 2 minutes - resumes change frequently
+    staleTime: 0, // No stale time - always get fresh data when invalidated
     refetchOnMount: "always",
     queryFn: async () => {
       const res = await authedFetch(api.resumes.list.path);

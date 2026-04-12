@@ -79,6 +79,9 @@ export function usePollingJob(jobId: number, initialStatus: string) {
     // Override global staleTime Infinity so polling can restart from cached complete state
     staleTime: 0,
     refetchOnMount: "always",
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
+    refetchIntervalInBackground: true,
     // Retry logic for polling
     retry: (failureCount, error) => {
       // Aggressive retry for polling since it's critical
@@ -105,10 +108,25 @@ export function usePollingJob(jobId: number, initialStatus: string) {
 
   // Handle side effects (like invalidating queries) in useEffect, not in queryFn
   useEffect(() => {
-    if (query.data?.status === "complete" || query.data?.status === "failed") {
+    // Invalidate when we get a terminal status OR when data changes from non-terminal to terminal
+    const currentStatus = query.data?.status;
+    const isTerminalStatus = currentStatus === "complete" || currentStatus === "failed";
+    
+    if (isTerminalStatus) {
+      // Invalidate the resumes list to show updated status
+      queryClient.invalidateQueries({ queryKey: [api.resumes.list.path] });
+      // Also invalidate this specific job query to ensure fresh data on remount
+      queryClient.invalidateQueries({ queryKey: [api.generate.status.path, jobId] });
+    }
+  }, [query.data, queryClient, jobId]); // Use query.data instead of query.data?.status to catch all changes
+
+  // Also invalidate if initial status is already terminal (for cases where component mounts after completion)
+  useEffect(() => {
+    const isInitialTerminal = initialStatus === "complete" || initialStatus === "failed";
+    if (isInitialTerminal) {
       queryClient.invalidateQueries({ queryKey: [api.resumes.list.path] });
     }
-  }, [query.data?.status, queryClient, jobId]);
+  }, [initialStatus, queryClient, jobId]);
 
   return query;
 }
