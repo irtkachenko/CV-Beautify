@@ -50,6 +50,11 @@ export default function CvViewPage() {
   const containerRef = useRef<HTMLDivElement>(null);
   const lastFailedMessageRef = useRef<string | null>(null);
   const syncedTerminalStatusRef = useRef<string | null>(null);
+  const cvDataRef = useRef<GeneratedCvResponse | null>(null);
+
+  useEffect(() => {
+    cvDataRef.current = cvData;
+  }, [cvData]);
 
   const fetchCvData = useCallback(async () => {
     if (!id) return;
@@ -70,12 +75,24 @@ export default function CvViewPage() {
       }
 
       const data: GeneratedCvResponse = await response.json();
-      setCvData(data);
-      setPdfUrl(withCacheBust(data.pdfUrl, data.updatedAt || Date.now()));
+      const prev = cvDataRef.current;
+
+      // Do not replace a terminal UI state with a stale busy row: after generation, polling may
+      // see `complete` first while this refetch still returns `processing` (replication / timing).
+      // List cards avoid that by combining poll + props; the detail view relied only on this fetch.
+      const next: GeneratedCvResponse =
+        prev &&
+        (prev.status === "complete" || prev.status === "failed") &&
+        (data.status === "pending" || data.status === "processing")
+          ? { ...prev, name: data.name ?? prev.name, updatedAt: data.updatedAt }
+          : data;
+
+      setCvData(next);
+      setPdfUrl(withCacheBust(next.pdfUrl, next.updatedAt || Date.now()));
 
       queryClient.setQueryData([api.resumes.list.path], (oldData: GeneratedCvResponse[] | undefined) => {
         if (!oldData || !Array.isArray(oldData)) return oldData;
-        return oldData.map((item) => (item.id === data.id ? { ...item, ...data } : item));
+        return oldData.map((item) => (item.id === next.id ? { ...item, ...next } : item));
       });
     } catch (err) {
       console.error("Error fetching CV:", err);
@@ -104,10 +121,11 @@ export default function CvViewPage() {
 
     setCvData((prev) => {
       if (!prev) return prev;
+      const terminal = polledJob.status === "complete" || polledJob.status === "failed";
       return {
         ...prev,
         status: polledJob.status,
-        progress: polledJob.progress ?? prev.progress,
+        progress: terminal ? (polledJob.progress ?? null) : (polledJob.progress ?? prev.progress),
         errorMessage: polledJob.errorMessage ?? prev.errorMessage,
         pdfUrl: polledJob.pdfUrl ?? prev.pdfUrl,
         template: polledJob.template || prev.template,
