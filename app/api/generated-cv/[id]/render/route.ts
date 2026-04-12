@@ -1,30 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
 import { authenticateRequest } from "@lib/server-auth";
+import createDOMPurify from "dompurify";
+import { parseHTML } from "linkedom";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-type DomPurifyInstance = {
-  sanitize: (
-    dirty: string,
-    cfg?: import("dompurify").Config
-  ) => string;
-};
-
-let domPurifyPromise: Promise<DomPurifyInstance> | null = null;
-
-async function getDomPurify(): Promise<DomPurifyInstance> {
-  if (!domPurifyPromise) {
-    domPurifyPromise = (async () => {
-      const [{ default: createDOMPurify }, { JSDOM }] = await Promise.all([
-        import("dompurify"),
-        import("jsdom"),
-      ]);
-      return createDOMPurify(new JSDOM("").window as never) as DomPurifyInstance;
-    })();
-  }
-  return domPurifyPromise;
+const { document: linkedomDocument } = parseHTML(
+  "<!DOCTYPE html><html><head></head><body></body></html>"
+);
+const linkedomWindow = linkedomDocument.defaultView;
+if (!linkedomWindow) {
+  throw new Error("linkedom: expected defaultView for DOMPurify");
 }
+
+const domPurify = createDOMPurify(linkedomWindow as never);
 
 export async function GET(
   request: NextRequest,
@@ -60,15 +50,13 @@ export async function GET(
       return NextResponse.json({ message: "Generated CV HTML not found" }, { status: 404 });
     }
 
-    const domPurify = await getDomPurify();
-
     // Sanitize HTML - allow style tags and semantic HTML5 tags for CV templates
     const safeHtml = domPurify.sanitize(cv.html_content, {
       ALLOWED_TAGS: [
         // Document structure
         "html", "head", "body", "title", "meta", "link",
         // Container elements
-        "div", "span", "p", 
+        "div", "span", "p",
         // Headers
         "h1", "h2", "h3", "h4", "h5", "h6",
         // Lists
@@ -84,9 +72,21 @@ export async function GET(
         // Semantic HTML5
         "section", "article", "header", "footer", "main", "aside", "nav",
         // Other common
-        "blockquote", "code", "pre", "sub", "sup", "small"
+        "blockquote", "code", "pre", "sub", "sup", "small",
       ],
-      ALLOWED_ATTR: ["href", "src", "alt", "class", "style", "id", "target", "rel", "content", "name", "media"],
+      ALLOWED_ATTR: [
+        "href",
+        "src",
+        "alt",
+        "class",
+        "style",
+        "id",
+        "target",
+        "rel",
+        "content",
+        "name",
+        "media",
+      ],
       ALLOW_DATA_ATTR: false,
       WHOLE_DOCUMENT: true,
     });
