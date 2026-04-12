@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createSupabaseServerClient, supabaseServerClient } from "@lib/supabase-server";
+import { createSupabaseServerClient, getSupabaseServerClient } from "@lib/supabase-server";
 
 type AuthContext =
   | {
@@ -22,7 +22,7 @@ export async function authenticateRequest(request: NextRequest): Promise<AuthCon
   const {
     data: { user },
     error,
-  } = await supabaseServerClient.auth.getUser(token);
+  } = await getSupabaseServerClient().auth.getUser(token);
 
   if (error || !user) {
     return { response: NextResponse.json({ message: "Invalid token" }, { status: 401 }) };

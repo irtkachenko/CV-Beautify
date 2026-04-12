@@ -26,4 +26,6 @@ export function createSupabaseServerClient(accessToken?: string) {
   });
 }
 
-export const supabaseServerClient = createSupabaseServerClient();
+export function getSupabaseServerClient() {
+  return createSupabaseServerClient();
+}
