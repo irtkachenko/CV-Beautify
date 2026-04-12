@@ -3,6 +3,7 @@ import path from "node:path";
 import mammoth from "mammoth";
 import Groq from "groq-sdk";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { getModelChain } from "./groq-models";
 
 type TemplateRow = {
   id: number;
@@ -23,23 +24,15 @@ type GeneratedCvRow = {
   cv_templates?: TemplateRow | null;
 };
 
-const DEFAULT_GROQ_MODEL_CHAIN = [
-  process.env.GROQ_MODEL?.trim(),
-  "mixtral-8x7b-32768",
-  "llama-3.3-70b-versatile",
-  "llama-3.1-70b-versatile",
-]
-  .filter((value): value is string => Boolean(value))
-  .filter((value, index, array) => array.indexOf(value) === index);
+// Dynamic model chain will be fetched at runtime
+let cachedModelChain: string[] | null = null;
 
-const ENV_GROQ_MODELS = (process.env.GROQ_MODELS || "")
-  .split(",")
-  .map((item) => item.trim())
-  .filter(Boolean);
-
-const GROQ_MODEL_CHAIN = [...ENV_GROQ_MODELS, ...DEFAULT_GROQ_MODEL_CHAIN].filter(
-  (value, index, array) => array.indexOf(value) === index
-);
+async function getGroqModelChain(): Promise<string[]> {
+  if (!cachedModelChain) {
+    cachedModelChain = await getModelChain();
+  }
+  return cachedModelChain;
+}
 
 function extractErrorMessage(error: unknown): string {
   if (typeof error === "string") return error;
@@ -114,7 +107,7 @@ async function runGroqCompletionWithFallback({
   maxTokens: number;
 }) {
   const groq = getGroqClient();
-  const modelChain = GROQ_MODEL_CHAIN.length > 0 ? GROQ_MODEL_CHAIN : ["mixtral-8x7b-32768"];
+  const modelChain = await getGroqModelChain();
   let lastError: unknown;
 
   for (const model of modelChain) {

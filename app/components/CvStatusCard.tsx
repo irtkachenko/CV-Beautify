@@ -10,6 +10,7 @@ import type { GeneratedCvResponse } from "@shared/routes";
 import { useTranslation } from "react-i18next";
 import { useCvIframePreview } from "@/hooks/use-cv-iframe-preview";
 import { SmartImage } from "@/components/ui/smart-image";
+import { SecureCvIframe } from "./SecureCvIframe";
 
 export function CvStatusCard({ cv }: { cv: GeneratedCvResponse }) {
   const { t } = useTranslation();
@@ -139,8 +140,8 @@ export function CvStatusCard({ cv }: { cv: GeneratedCvResponse }) {
                       minHeight: '297mm'
                     }}
                   >
-                    <iframe
-                      src={displayData.pdfUrl}
+                    <SecureCvIframe
+                      cvId={cv.id}
                       onLoad={handleIframeLoad}
                       className={`w-full h-full border-0 absolute top-0 left-0 transition-opacity duration-150 ${iframeReady ? "opacity-100" : "opacity-0"}`}
                       style={{

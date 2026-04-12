@@ -40,10 +40,30 @@ export async function GET(
       return NextResponse.json({ message: "Generated CV HTML not found" }, { status: 404 });
     }
 
-    // Sanitize HTML
+    // Sanitize HTML - allow style tags and semantic HTML5 tags for CV templates
     const safeHtml = domPurify.sanitize(cv.html_content, {
-      ALLOWED_TAGS: ["div", "span", "p", "h1", "h2", "h3", "h4", "h5", "h6", "ul", "ol", "li", "a", "strong", "em", "u", "br", "hr", "img", "table", "thead", "tbody", "tr", "td", "th"],
-      ALLOWED_ATTR: ["href", "src", "alt", "class", "style", "id"],
+      ALLOWED_TAGS: [
+        // Container elements
+        "div", "span", "p", 
+        // Headers
+        "h1", "h2", "h3", "h4", "h5", "h6",
+        // Lists
+        "ul", "ol", "li",
+        // Text formatting
+        "a", "strong", "em", "b", "i", "u", "br", "hr",
+        // Tables
+        "table", "thead", "tbody", "tr", "td", "th",
+        // Media
+        "img",
+        // CSS
+        "style",
+        // Semantic HTML5
+        "section", "article", "header", "footer", "main", "aside", "nav",
+        // Other common
+        "blockquote", "code", "pre", "sub", "sup", "small"
+      ],
+      ALLOWED_ATTR: ["href", "src", "alt", "class", "style", "id", "target", "rel"],
+      ALLOW_DATA_ATTR: false,
     });
 
     return new NextResponse(safeHtml, {

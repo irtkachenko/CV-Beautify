@@ -15,6 +15,7 @@ import { useTranslation } from "react-i18next";
 import { useCvIframePreview } from "@/hooks/use-cv-iframe-preview";
 import { authedFetch } from "@lib/authed-fetch";
 import { useAuth } from "@/hooks/use-auth";
+import { SecureCvIframe } from "@/components/SecureCvIframe";
 
 const AI_EDIT_PROMPT_MIN_LENGTH = 10;
 const AI_EDIT_PROMPT_MAX_LENGTH = 1000;
@@ -476,9 +477,9 @@ export default function CvViewPage() {
                         </p>
                       </div>
                     </div>
-                  ) : pdfUrl ? (
-                    <iframe
-                      src={pdfUrl}
+                  ) : cvData ? (
+                    <SecureCvIframe
+                      cvId={cvData.id}
                       onLoad={handleIframeLoad}
                       className={`w-full h-full border-0 absolute top-0 left-0 transition-opacity duration-150 ${iframeReady ? "opacity-100" : "opacity-0"}`}
                       style={{
