@@ -33,7 +33,16 @@ export async function GET(request: NextRequest) {
     }
 
     const mappedCvs = (cvs || []).map(mapGeneratedCvRow);
-    return NextResponse.json(mappedCvs);
+    
+    // Include CV count and limit information for frontend
+    const response = {
+      cvs: mappedCvs,
+      count: mappedCvs.length,
+      limit: 5,
+      canCreateMore: mappedCvs.length < 5
+    };
+    
+    return NextResponse.json(response);
   } catch (error) {
     console.error("Resumes route error:", error);
     return NextResponse.json({ message: "Internal server error" }, { status: 500 });

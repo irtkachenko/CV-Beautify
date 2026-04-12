@@ -42,6 +42,23 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ message: "Template not found" }, { status: 404 });
     }
 
+    // Check user's CV generation limit
+    const { data: existingCvs, error: countError } = await supabase
+      .from("generated_cvs")
+      .select("id")
+      .eq("user_id", userId);
+
+    if (countError) {
+      console.error("Failed to check CV count:", countError);
+      return NextResponse.json({ message: "Failed to validate CV limit" }, { status: 500 });
+    }
+
+    if (existingCvs && existingCvs.length >= 5) {
+      return NextResponse.json({ 
+        message: "You have reached the maximum limit of 5 generated CVs. Please delete an existing CV to create a new one." 
+      }, { status: 429 });
+    }
+
     const fileBuffer = Buffer.from(await file.arrayBuffer());
 
     // Create CV generation record
