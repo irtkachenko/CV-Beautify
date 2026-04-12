@@ -2,18 +2,34 @@
 
 import { useState } from "react";
 import { useTemplates } from "@/hooks/use-templates";
+import { useMyResumes } from "@/hooks/use-cvs";
 import { GenerateModal } from "@/components/GenerateModal";
 import { Navbar } from "@/components/layout/Navbar";
 import { motion } from "framer-motion";
-import { Loader2, Plus } from "lucide-react";
+import { Loader2, Plus, Lock } from "lucide-react";
 import type { CvTemplate } from "@shared/routes";
 import { useTranslation } from "react-i18next";
 import { SmartImage } from "@/components/ui/smart-image";
+import { useToast } from "@/hooks/use-toast";
 
 export default function GalleryPage() {
   const { t } = useTranslation();
   const { data: templates, isLoading, error } = useTemplates();
+  const { data: resumesData } = useMyResumes();
   const [selectedTemplate, setSelectedTemplate] = useState<CvTemplate | null>(null);
+  const { toast } = useToast();
+
+  const handleTemplateClick = (template: CvTemplate) => {
+    if (resumesData && !resumesData.canCreateMore) {
+      toast({
+        title: "CV Limit Reached",
+        description: "You have reached the maximum limit of 5 generated CVs. Please delete an existing CV to create a new one.",
+        variant: "destructive",
+      });
+      return;
+    }
+    setSelectedTemplate(template);
+  };
 
   const container = {
     hidden: { opacity: 0 },
@@ -76,11 +92,25 @@ export default function GalleryPage() {
                   {/* Overlay on Hover */}
                   <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-center justify-center z-10">
                     <button
-                      onClick={() => setSelectedTemplate(template)}
-                      className="flex items-center gap-2 px-6 py-3 rounded-full font-bold text-white bg-primary shadow-lg hover:bg-primary/90 hover:scale-105 transition-all transform translate-y-4 group-hover:translate-y-0"
+                      onClick={() => handleTemplateClick(template)}
+                      disabled={resumesData && !resumesData.canCreateMore}
+                      className={`flex items-center gap-2 px-6 py-3 rounded-full font-bold text-white shadow-lg transition-all transform translate-y-4 group-hover:translate-y-0 ${
+                        resumesData && !resumesData.canCreateMore
+                          ? 'bg-gray-500 cursor-not-allowed'
+                          : 'bg-primary hover:bg-primary/90 hover:scale-105'
+                      }`}
                     >
-                      <Plus className="w-5 h-5" />
-                      {t("gallery.use_template")}
+                      {resumesData && !resumesData.canCreateMore ? (
+                        <>
+                          <Lock className="w-5 h-5" />
+                          Limit Reached
+                        </>
+                      ) : (
+                        <>
+                          <Plus className="w-5 h-5" />
+                          {t("gallery.use_template")}
+                        </>
+                      )}
                     </button>
                   </div>
                 </div>

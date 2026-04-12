@@ -15,7 +15,7 @@ export default function MyResumesPage() {
   const router = useRouter();
   const { t } = useTranslation();
   const { user, isLoading: isAuthLoading } = useAuth();
-  const { data: resumes, isLoading, error } = useMyResumes();
+  const { data: resumesData, isLoading, error } = useMyResumes();
 
   // Scroll to top on mount to ensure user sees the latest CVs (newest at top)
   React.useEffect(() => {
@@ -50,6 +50,18 @@ export default function MyResumesPage() {
             <p className="text-muted-foreground mt-2">
               {t("my_resumes.description")}
             </p>
+            {resumesData && (
+              <div className="mt-3">
+                <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
+                  resumesData.canCreateMore 
+                    ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' 
+                    : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+                }`}>
+                  {resumesData.count}/{resumesData.limit} CVs generated
+                  {!resumesData.canCreateMore && ' - Limit reached'}
+                </span>
+              </div>
+            )}
           </div>
         </div>
 
@@ -63,7 +75,7 @@ export default function MyResumesPage() {
             <p className="font-bold text-lg">{t("my_resumes.error")}</p>
             <p className="text-sm mt-2">{t("my_resumes.error_desc")}</p>
           </div>
-        ) : !resumes || resumes.length === 0 ? (
+        ) : !resumesData || !resumesData.cvs || resumesData.cvs.length === 0 ? (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -89,7 +101,7 @@ export default function MyResumesPage() {
             animate={{ opacity: 1 }}
             className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8"
           >
-            {resumes.map((resume) => (
+            {resumesData.cvs.map((resume) => (
               <CvStatusCard key={resume.id} cv={resume} />
             ))}
           </motion.div>
