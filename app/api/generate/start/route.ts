@@ -104,8 +104,10 @@ export async function POST(request: NextRequest) {
           error_message: error instanceof Error ? error.message : "Unknown error occurred during generation",
         })
         .eq("id", newCv.id)
-        .catch((updateError) => {
-          console.error(`[generate:${newCv.id}] Failed to update status to failed:`, updateError);
+        .then(({ error: updateError }) => {
+          if (updateError) {
+            console.error(`[generate:${newCv.id}] Failed to update status to failed:`, updateError);
+          }
         });
     });
 
