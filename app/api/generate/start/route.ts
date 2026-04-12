@@ -86,12 +86,27 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ message: "Failed to start CV generation" }, { status: 500 });
     }
 
-    void runGenerateCvJob({
+    // Run the generation job with proper error handling
+    runGenerateCvJob({
       supabase,
       cvId: newCv.id,
       fileBuffer,
       template,
       generationPrompt,
+    }).catch((error) => {
+      console.error(`[generate:${newCv.id}] Unhandled error in runGenerateCvJob:`, error);
+      // Update status to failed if job crashes
+      supabase
+        .from("generated_cvs")
+        .update({
+          status: "failed",
+          progress: null,
+          error_message: error instanceof Error ? error.message : "Unknown error occurred during generation",
+        })
+        .eq("id", newCv.id)
+        .catch((updateError) => {
+          console.error(`[generate:${newCv.id}] Failed to update status to failed:`, updateError);
+        });
     });
 
     return NextResponse.json({ jobId: newCv.id }, { status: 202 });

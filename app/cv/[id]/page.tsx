@@ -121,18 +121,23 @@ export default function CvViewPage() {
 
     setCvData((prev) => {
       if (!prev) return prev;
+      
+      // Only update status if current CV is in pending/processing state
+      // This prevents stuck loading when polling returns stale data
+      const shouldUpdateStatus = prev.status === "pending" || prev.status === "processing";
       const terminal = polledJob.status === "complete" || polledJob.status === "failed";
+      
       return {
         ...prev,
-        status: polledJob.status,
-        progress: terminal ? (polledJob.progress ?? null) : (polledJob.progress ?? prev.progress),
-        errorMessage: polledJob.errorMessage ?? prev.errorMessage,
-        pdfUrl: polledJob.pdfUrl ?? prev.pdfUrl,
-        template: polledJob.template || prev.template,
+        status: shouldUpdateStatus ? polledJob.status : prev.status,
+        progress: shouldUpdateStatus && terminal ? (polledJob.progress ?? null) : (polledJob.progress ?? prev.progress),
+        errorMessage: shouldUpdateStatus ? (polledJob.errorMessage ?? prev.errorMessage) : prev.errorMessage,
+        pdfUrl: shouldUpdateStatus ? (polledJob.pdfUrl ?? prev.pdfUrl) : prev.pdfUrl,
+        template: shouldUpdateStatus ? (polledJob.template || prev.template) : prev.template,
       };
     });
 
-    if (polledJob.pdfUrl) {
+    if (polledJob.pdfUrl && cvData && (cvData.status === "pending" || cvData.status === "processing")) {
       const shouldBust = polledJob.status === "complete" || polledJob.status === "failed";
       setPdfUrl(shouldBust ? withCacheBust(polledJob.pdfUrl, Date.now()) : polledJob.pdfUrl);
     }
