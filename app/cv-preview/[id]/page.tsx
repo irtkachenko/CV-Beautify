@@ -3,6 +3,23 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 
+async function readApiErrorMessage(response: Response): Promise<string | null> {
+  const ct = response.headers.get("content-type") ?? "";
+  if (!ct.includes("application/json")) {
+    return null;
+  }
+  try {
+    const data = (await response.json()) as {
+      detail?: string;
+      message?: string;
+    };
+    const text = (data.detail ?? data.message ?? "").trim();
+    return text || null;
+  } catch {
+    return null;
+  }
+}
+
 function normalizePreviewHtml(rawHtml: string): string {
   if (typeof window === "undefined") {
     return rawHtml;
@@ -70,14 +87,15 @@ export default function CvPreviewPage() {
       });
 
       if (!response.ok) {
+        const fromServer = await readApiErrorMessage(response);
         if (response.status === 401) {
-          setError("Unauthorized - invalid or expired token");
+          setError(fromServer ?? "Unauthorized — invalid or expired token");
         } else if (response.status === 403) {
-          setError("Access denied");
+          setError(fromServer ?? "Access denied");
         } else if (response.status === 404) {
-          setError("CV not found");
+          setError(fromServer ?? "CV not found");
         } else {
-          setError("Failed to load CV");
+          setError(fromServer ?? `Failed to load CV (${response.status})`);
         }
         return;
       }

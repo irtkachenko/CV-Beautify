@@ -101,6 +101,22 @@ export async function GET(
     });
   } catch (error) {
     console.error("CV render error:", error);
-    return NextResponse.json({ message: "Internal server error" }, { status: 500 });
+    const detail =
+      error instanceof Error
+        ? error.message
+        : typeof error === "string"
+          ? error
+          : String(error);
+
+    const body: { message: string; detail: string; stack?: string } = {
+      message: "Internal server error",
+      detail,
+    };
+
+    if (process.env.NODE_ENV === "development" && error instanceof Error && error.stack) {
+      body.stack = error.stack;
+    }
+
+    return NextResponse.json(body, { status: 500 });
   }
 }
