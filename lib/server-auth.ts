@@ -41,6 +41,7 @@ export async function authenticateRequest(request: NextRequest): Promise<AuthCon
     console.log("Debug - Looking for cookie:", cookieName);
     token = request.cookies.get(cookieName)?.value;
     console.log("Debug - Cookie value found:", !!token);
+    console.log("Debug - Authorization header:", authHeader ? "present" : "missing");
   }
   
   // If still no token, try refresh token
