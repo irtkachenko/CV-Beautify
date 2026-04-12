@@ -104,6 +104,7 @@ export default function CvViewPage() {
 
   useEffect(() => {
     if (!isAuthLoading && !user) {
+      console.log("User not authenticated, redirecting to home");
       router.replace("/");
     }
   }, [isAuthLoading, user, router]);
@@ -232,8 +233,14 @@ export default function CvViewPage() {
     }
   };
 
-  const handleSubmitAiEdit = async () => {
-    if (!cvData) return;
+  const handleSubmitAiEdit = async (e?: React.MouseEvent) => {
+    e?.preventDefault();
+    console.log("AI Edit submission started");
+    
+    if (!cvData) {
+      console.error("No CV data available");
+      return;
+    }
 
     const trimmedPrompt = aiPrompt.replace(/\u0000/g, "").trim();
     if (trimmedPrompt.length < AI_EDIT_PROMPT_MIN_LENGTH) {
@@ -256,6 +263,7 @@ export default function CvViewPage() {
 
     try {
       setIsSubmittingAiEdit(true);
+      console.log("Making AI edit request for CV:", cvData.id);
       const url = buildUrl(api.resumes.aiEdit.path, { id: cvData.id });
       const response = await authedFetch(url, {
         method: api.resumes.aiEdit.method,
@@ -270,6 +278,7 @@ export default function CvViewPage() {
       });
 
       if (!response.ok) {
+        console.error("AI edit request failed:", response.status, response.statusText);
         let message = t("cv_view.errors.ai_edit_start_failed");
         try {
           const errorBody = await response.json();
@@ -292,6 +301,7 @@ export default function CvViewPage() {
       }
 
       const startPayload = await response.json();
+      console.log("AI edit request accepted:", startPayload);
       void startPayload;
 
       setCvData((prev) =>
@@ -726,7 +736,7 @@ export default function CvViewPage() {
                     </button>
                     <button
                       type="button"
-                      onClick={handleSubmitAiEdit}
+                      onClick={(e) => handleSubmitAiEdit(e)}
                       className="px-4 py-2 rounded-md bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50"
                       disabled={isSubmittingAiEdit}
                     >
