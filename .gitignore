@@ -21,8 +21,8 @@ next-env.d.ts
 out/
 turbo/
 
-# Vercel
-.vercel/
+# Vercel (keep vercel.json in git for deployment config)
+# .vercel/
 
 # Logs
 *.log
@@ -38,3 +38,6 @@ coverage/
 .cache/
 .eslintcache
 tech-audit.md
+
+# Supabase CLI (large binary file)
+supabase-cli.exe
