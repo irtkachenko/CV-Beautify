@@ -21,7 +21,7 @@ console.log(`Found project ref: ${projectRef}`);
 
 // Link to Supabase project
 try {
-  execSync(`npx supabase link --project-ref ${projectRef}`, { stdio: 'inherit' });
+  execSync(`${path.join(process.cwd(), 'supabase-cli.exe')} link --project-ref ${projectRef}`, { stdio: 'inherit' });
   console.log('Successfully linked to Supabase project!');
 } catch (error) {
   console.error('Error linking to Supabase project:', error.message);

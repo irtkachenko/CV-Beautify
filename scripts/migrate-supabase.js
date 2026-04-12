@@ -26,7 +26,7 @@ try {
     const migrationPath = path.join(migrationsDir, file);
     console.log(`📄 Applying ${file}...`);
     try {
-      execSync(`npx supabase db query --linked --file "${migrationPath}"`, { stdio: 'inherit' });
+      execSync(`${path.join(process.cwd(), 'supabase-cli.exe')} db query --linked --file "${migrationPath}"`, { stdio: 'inherit' });
       console.log(`✅ ${file} applied successfully!\n`);
       successCount++;
     } catch (error) {
