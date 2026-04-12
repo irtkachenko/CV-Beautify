@@ -99,7 +99,7 @@ export function GenerateModal({ template, isOpen, onClose }: GenerateModalProps)
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-[100] flex items-center justify-center px-2 sm:px-4">
+      <div className="fixed inset-0 z-[100] flex items-start justify-center px-2 sm:px-4 pt-4 pb-4">
         {/* Backdrop */}
         <motion.div
           initial={{ opacity: 0 }}
@@ -114,7 +114,7 @@ export function GenerateModal({ template, isOpen, onClose }: GenerateModalProps)
           initial={{ opacity: 0, scale: 0.95, y: 10 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 10 }}
-          className="relative w-full max-w-2xl mx-2 sm:mx-4 bg-card rounded-2xl shadow-2xl border border-border/50 flex flex-col md:flex-row overflow-hidden max-h-[95vh] md:max-h-[85vh] my-auto"
+          className="relative w-full max-w-2xl mx-2 sm:mx-4 bg-card rounded-2xl shadow-2xl border border-border/50 flex flex-col md:flex-row max-h-[calc(100vh-2rem)] overflow-y-auto"
         >
           {/* Close Button */}
           <button
@@ -125,17 +125,26 @@ export function GenerateModal({ template, isOpen, onClose }: GenerateModalProps)
             <X className="w-4 h-4 sm:w-5 sm:h-5 text-foreground" />
           </button>
 
-          {/* Left: Template Preview */}
-          <TemplatePreview template={template} />
+          {/* Template Preview - desktop only */}
+          <div className="hidden md:block md:w-1/2 border-r border-border/50">
+            <TemplatePreview template={template} />
+          </div>
 
-          {/* Right: Form */}
-          <GenerateForm
-            onSubmit={handleSubmit}
-            selectedFile={selectedFile}
-            onFileSelect={handleFileSelect}
-            onFileRemove={handleFileRemove}
-            isPending={isPending}
-          />
+          {/* Form - mobile full width, desktop half width */}
+          <div className="w-full md:w-1/2">
+            <GenerateForm
+              onSubmit={handleSubmit}
+              selectedFile={selectedFile}
+              onFileSelect={handleFileSelect}
+              onFileRemove={handleFileRemove}
+              isPending={isPending}
+            />
+          </div>
+
+          {/* Mobile Template Preview - below form */}
+          <div className="md:hidden border-t border-border/50">
+            <TemplatePreview template={template} />
+          </div>
         </motion.div>
       </div>
     </AnimatePresence>

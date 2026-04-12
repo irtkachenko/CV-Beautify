@@ -22,7 +22,7 @@ export function GenerateForm({
   const { t } = useTranslation();
 
   return (
-    <form onSubmit={onSubmit} className="w-full md:w-1/2 p-6 flex flex-col gap-4">
+    <form onSubmit={onSubmit} className="w-full p-6 flex flex-col gap-4">
       <h3 className="text-xl font-bold text-foreground">{t("modal.upload_cv") || "Upload CV"}</h3>
       <p className="text-sm text-muted-foreground">
         {t("modal.upload_hint") || "Upload a .docx file to generate a polished CV."}

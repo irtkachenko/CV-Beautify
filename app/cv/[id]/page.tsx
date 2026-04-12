@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowLeft, Download, Loader2, FileText, CheckCircle, Sparkles, AlertCircle, X } from "lucide-react";
+import { ArrowLeft, Download, Loader2, FileText, CheckCircle, Sparkles, AlertCircle, X, Menu } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { api, buildUrl, GeneratedCvResponse } from "@shared/routes";
 import { generatePdfFromUrl } from "@lib/pdf-generator-fixed";
@@ -45,6 +45,7 @@ export default function CvViewPage() {
   const [aiPrompt, setAiPrompt] = useState("");
   const [useOriginalDocumentContext, setUseOriginalDocumentContext] = useState(false);
   const [isSubmittingAiEdit, setIsSubmittingAiEdit] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const lastFailedMessageRef = useRef<string | null>(null);
@@ -384,7 +385,8 @@ export default function CvViewPage() {
               </div>
             </div>
 
-            <div className="flex items-center gap-3">
+            {/* Desktop buttons */}
+            <div className="hidden xl2:flex items-center gap-3">
               <button
                 onClick={() => {
                   setUseOriginalDocumentContext(false);
@@ -394,7 +396,7 @@ export default function CvViewPage() {
                 className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
               >
                 <Sparkles className="w-4 h-4" />
-                <span className="hidden sm:inline">{t("cv_view.edit_with_ai")}</span>
+                <span>{t("cv_view.edit_with_ai")}</span>
               </button>
 
               <button
@@ -405,18 +407,76 @@ export default function CvViewPage() {
                 {isGeneratingPdf ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    <span className="hidden sm:inline">{t("cv_view.generating")}</span>
+                    <span>{t("cv_view.generating")}</span>
                   </>
                 ) : (
                   <>
                     <Download className="w-4 h-4" />
-                    <span className="hidden sm:inline">{t("cv_view.download_pdf")}</span>
+                    <span>{t("cv_view.download_pdf")}</span>
                   </>
                 )}
               </button>
             </div>
+
+            {/* Mobile menu button */}
+            <div className="xl2:hidden">
+              <button
+                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                className="p-2 text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <Menu className="w-5 h-5" />
+              </button>
+            </div>
           </div>
         </div>
+
+        {/* Mobile menu */}
+        <AnimatePresence>
+          {isMobileMenuOpen && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              className="xl2:hidden bg-white border-t border-gray-200"
+            >
+              <div className="px-4 py-3 space-y-2">
+                <button
+                  onClick={() => {
+                    setUseOriginalDocumentContext(false);
+                    setIsAiDialogOpen(true);
+                    setIsMobileMenuOpen(false);
+                  }}
+                  disabled={!canEditWithAi}
+                  className="w-full flex items-center gap-3 px-4 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <Sparkles className="w-4 h-4" />
+                  <span>{t("cv_view.edit_with_ai")}</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    handleDownloadPDF();
+                    setIsMobileMenuOpen(false);
+                  }}
+                  disabled={isGeneratingPdf || isProcessing || !pdfUrl}
+                  className="w-full flex items-center gap-3 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isGeneratingPdf ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>{t("cv_view.generating")}</span>
+                    </>
+                  ) : (
+                    <>
+                      <Download className="w-4 h-4" />
+                      <span>{t("cv_view.download_pdf")}</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </header>
 
       <main className="py-8">
