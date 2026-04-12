@@ -84,7 +84,12 @@ export const api = {
       method: 'GET' as const,
       path: '/api/resumes' as const,
       responses: {
-        200: z.array(z.custom<GeneratedCvResponse>()),
+        200: z.object({
+          cvs: z.array(z.custom<GeneratedCvResponse>()),
+          count: z.number(),
+          limit: z.number(),
+          canCreateMore: z.boolean(),
+        }),
         401: errorSchemas.unauthorized,
       },
     },
