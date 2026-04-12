@@ -17,9 +17,15 @@ export function CvStatusCard({ cv }: { cv: GeneratedCvResponse }) {
   // Poll if status is pending/processing
   const { data: polledJob } = usePollingJob(cv.id, cv.status);
 
-  // Always use polled data when available, fallback to original cv
-  // This ensures real-time updates when polling is active
-  const displayData = polledJob || cv;
+  // Use polled data for pending/processing, but trust props for terminal states
+  // This prevents stuck loading when polling returns stale data
+  let displayData = cv;
+  if (cv.status === "pending" || cv.status === "processing") {
+    displayData = polledJob || cv;
+  }
+  
+  // Log status changes for debugging
+  console.log(`[CvStatusCard:${cv.id}] Original: ${cv.status}, Polled: ${polledJob?.status}, Display: ${displayData.status}`);
   
   const isProcessing = displayData.status === "pending" || displayData.status === "processing";
   const isFailed = displayData.status === "failed";

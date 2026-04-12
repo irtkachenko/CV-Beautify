@@ -8,18 +8,28 @@ import { authedFetch } from "@lib/authed-fetch";
 export function useMyResumes() {
   return useQuery({
     queryKey: [api.resumes.list.path],
-    staleTime: 0, // No stale time - always get fresh data when invalidated
+    staleTime: 1000, // 1 second stale time to allow quick updates
     refetchOnMount: "always",
+    refetchOnWindowFocus: true,
     queryFn: async () => {
+      console.log(`[useMyResumes] Fetching resumes list at ${new Date().toISOString()}`);
       const res = await authedFetch(api.resumes.list.path);
       if (!res.ok) {
         if (res.status === 401) throw new Error("Unauthorized");
         throw new Error("Failed to fetch resumes");
       }
       const data = await res.json();
-      return parseWithLogging(api.resumes.list.responses[200], data, "resumes.list");
+      const parsed = parseWithLogging(api.resumes.list.responses[200], data, "resumes.list");
+      console.log(`[useMyResumes] Fetched ${parsed?.length || 0} resumes`);
+      return parsed;
     },
     retry: 2, // Retry 2 times for resume list
+    onSuccess: (data: any) => {
+      console.log(`[useMyResumes] Query successful with ${data?.length || 0} resumes`);
+    },
+    onError: (error: any) => {
+      console.log(`[useMyResumes] Query failed:`, error);
+    }
   });
 }
 

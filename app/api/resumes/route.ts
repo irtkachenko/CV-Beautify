@@ -28,11 +28,16 @@ export async function GET(request: NextRequest) {
       .order("updated_at", { ascending: false });
 
     if (error) {
-      console.error("Resumes fetch error:", error);
+      console.error("Failed to fetch resumes:", error);
       return NextResponse.json({ message: "Failed to fetch resumes" }, { status: 500 });
     }
 
-    return NextResponse.json((cvs || []).map(mapGeneratedCvRow));
+    const mappedCvs = (cvs || []).map(mapGeneratedCvRow);
+    console.log(`[api/resumes] Returning ${mappedCvs.length} resumes:`);
+    mappedCvs.forEach(cv => {
+      console.log(`[api/resumes] CV ${cv.id}: status=${cv.status}, name=${cv.name}`);
+    });
+    return NextResponse.json(mappedCvs);
   } catch (error) {
     console.error("Resumes route error:", error);
     return NextResponse.json({ message: "Internal server error" }, { status: 500 });
