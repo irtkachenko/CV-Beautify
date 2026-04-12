@@ -12,7 +12,6 @@ export function useMyResumes() {
     refetchOnMount: "always",
     refetchOnWindowFocus: true,
     queryFn: async () => {
-      console.log(`[useMyResumes] Fetching resumes list at ${new Date().toISOString()}`);
       const res = await authedFetch(api.resumes.list.path);
       if (!res.ok) {
         if (res.status === 401) throw new Error("Unauthorized");
@@ -20,16 +19,9 @@ export function useMyResumes() {
       }
       const data = await res.json();
       const parsed = parseWithLogging(api.resumes.list.responses[200], data, "resumes.list");
-      console.log(`[useMyResumes] Fetched ${parsed?.length || 0} resumes`);
       return parsed;
     },
     retry: 2, // Retry 2 times for resume list
-    onSuccess: (data: any) => {
-      console.log(`[useMyResumes] Query successful with ${data?.length || 0} resumes`);
-    },
-    onError: (error: any) => {
-      console.log(`[useMyResumes] Query failed:`, error);
-    }
   });
 }
 

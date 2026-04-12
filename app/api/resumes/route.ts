@@ -33,10 +33,6 @@ export async function GET(request: NextRequest) {
     }
 
     const mappedCvs = (cvs || []).map(mapGeneratedCvRow);
-    console.log(`[api/resumes] Returning ${mappedCvs.length} resumes:`);
-    mappedCvs.forEach(cv => {
-      console.log(`[api/resumes] CV ${cv.id}: status=${cv.status}, name=${cv.name}`);
-    });
     return NextResponse.json(mappedCvs);
   } catch (error) {
     console.error("Resumes route error:", error);

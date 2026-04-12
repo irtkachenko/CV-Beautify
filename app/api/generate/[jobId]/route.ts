@@ -55,7 +55,6 @@ export async function GET(
       template: mappedCv.template || undefined,
     };
 
-    console.log(`[generate:${jobId}] API returning status: ${mappedCv.status}`);
     return NextResponse.json(statusResponse);
   } catch (error) {
     console.error("Generate status error:", error);

@@ -19,17 +19,16 @@ export function CvStatusCard({ cv }: { cv: GeneratedCvResponse }) {
 
   // Use polled data for pending/processing, but trust props for terminal states
   // This prevents stuck loading when polling returns stale data
-  let displayData = cv;
-  if (cv.status === "pending" || cv.status === "processing") {
-    displayData = polledJob || cv;
-  }
+  const displayData: GeneratedCvResponse = cv;
+  const polledStatus = polledJob?.status;
+  const currentStatus = (cv.status === "pending" || cv.status === "processing") && polledStatus 
+    ? polledStatus 
+    : cv.status;
   
-  // Log status changes for debugging
-  console.log(`[CvStatusCard:${cv.id}] Original: ${cv.status}, Polled: ${polledJob?.status}, Display: ${displayData.status}`);
-  
-  const isProcessing = displayData.status === "pending" || displayData.status === "processing";
-  const isFailed = displayData.status === "failed";
-  const isComplete = displayData.status === "complete";
+    
+  const isProcessing = currentStatus === "pending" || currentStatus === "processing";
+  const isFailed = currentStatus === "failed";
+  const isComplete = currentStatus === "complete";
 
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -220,7 +219,7 @@ export function CvStatusCard({ cv }: { cv: GeneratedCvResponse }) {
                   isComplete ? 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20' :
                     'bg-red-500/10 text-red-600 border border-red-500/20'
                   }`}>
-                  {isProcessing ? t("cv_card.processing") : displayData.status}
+                  {isProcessing ? t("cv_card.processing") : currentStatus}
                 </div>
               </div>
               <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-3">

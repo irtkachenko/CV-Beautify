@@ -17,8 +17,6 @@ export function useGenerateCv() {
 
   return useMutation({
     mutationFn: async (data: GenerateCvInput) => {
-      console.log(`[useGenerateCv] Starting mutation with template: ${data.templateId}`);
-      
       // Create FormData for file upload
       const formData = new FormData();
       formData.append('file', data.file);
@@ -28,7 +26,6 @@ export function useGenerateCv() {
       }
       formData.append("temperature", "0.5");
 
-      console.log(`[useGenerateCv] Sending request to ${api.generate.start.path}`);
       const res = await authedFetch(api.generate.start.path, {
         method: api.generate.start.method,
         body: formData,
@@ -37,40 +34,30 @@ export function useGenerateCv() {
         }
       });
 
-      console.log(`[useGenerateCv] Response status: ${res.status}`);
       if (!res.ok) {
         if (res.status === 400 || res.status === 429) {
           const error = await res.json();
-          console.log(`[useGenerateCv] API error:`, error);
           throw new Error(error.message || i18n.t("errors.validation_failed"));
         }
-        console.log(`[useGenerateCv] Generic error, status: ${res.status}`);
         throw new Error(i18n.t("errors.generate_start_failed"));
       }
 
       const responseData = await res.json();
       const parsed = parseWithLogging(api.generate.start.responses[202], responseData, "generate.start");
-      console.log(`[useGenerateCv] Mutation successful, got jobId:`, parsed.jobId);
       return parsed;
     },
     retry: 1, // Retry once for generation failures
     retryDelay: 2000, // Wait 2 seconds before retry
     onSuccess: () => {
-      console.log(`[useGenerateCv] onSuccess callback triggered`);
-      console.log(`[useGenerateCv] About to invalidate queries with key:`, [api.resumes.list.path]);
       queryClient.invalidateQueries({ queryKey: [api.resumes.list.path] });
-      console.log(`[useGenerateCv] Queries invalidated`);
       // Also set the query to stale to ensure fresh data on next mount
       queryClient.setQueryData([api.resumes.list.path], (old: any) => undefined);
-      console.log(`[useGenerateCv] Query data cleared`);
       
       // Small delay to ensure server has created the record before refetching
       setTimeout(() => {
         queryClient.refetchQueries({ queryKey: [api.resumes.list.path] });
-        console.log(`[useGenerateCv] Forced refetch queries after delay`);
       }, 100);
       
-      console.log(`[useGenerateCv] Invalidated queries and redirecting to my-resumes`);
       // Scroll to top to show the new CV being generated
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
@@ -109,7 +96,6 @@ export function usePollingJob(jobId: number, initialStatus: string) {
     retry: (failureCount, error) => {
       // Aggressive retry for polling since it's critical
       if (failureCount < 5) {
-        console.warn(`Job status poll attempt ${failureCount + 1} failed:`, error);
         return true;
       }
       return false;
@@ -121,11 +107,9 @@ export function usePollingJob(jobId: number, initialStatus: string) {
     // Poll every 2 seconds if status is still pending or processing
     refetchInterval: (query) => {
       const currentStatus = query.state.data?.status || initialStatus;
-      console.log(`[usePollingJob:${jobId}] Current status: ${currentStatus}, polling: ${currentStatus === "pending" || currentStatus === "processing"}`);
       if (currentStatus === "pending" || currentStatus === "processing") {
         return 2000;
       }
-      console.log(`[usePollingJob:${jobId}] Stopping polling - status is ${currentStatus}`);
       return false;
     },
     enabled: jobId > 0, // Always enable polling, let refetchInterval control when to stop

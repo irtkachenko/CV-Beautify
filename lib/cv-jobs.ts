@@ -91,13 +91,10 @@ async function setProgress(
   cvId: number,
   patch: { status?: "pending" | "processing" | "complete" | "failed"; progress?: string | null; error_message?: string | null; html_content?: string | null; pdf_url?: string | null; original_doc_text?: string | null; original_doc_links?: unknown }
 ) {
-  console.log(`[generate:${cvId}] Updating progress:`, patch);
   const { error } = await supabase.from("generated_cvs").update(patch).eq("id", cvId);
   if (error) {
-    console.error(`[generate:${cvId}] Failed to update progress:`, error);
     throw new Error(`Failed to update CV ${cvId}: ${error.message}`);
   }
-  console.log(`[generate:${cvId}] Progress updated successfully with status: ${patch.status}`);
 }
 
 async function runGroqCompletionWithFallback({
