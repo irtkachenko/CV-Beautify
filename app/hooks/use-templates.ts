@@ -6,6 +6,8 @@ import { parseWithLogging } from "@lib/validation";
 export function useTemplates() {
   return useQuery({
     queryKey: [api.templates.list.path],
+    staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
     queryFn: async () => {
       const res = await authedFetch(api.templates.list.path);
       if (!res.ok) {

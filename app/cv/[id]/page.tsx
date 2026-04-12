@@ -281,7 +281,7 @@ export default function CvViewPage() {
           : prev
       );
 
-      queryClient.setQueryData([api.generate.status.path, cvData.id, "active"], {
+      queryClient.setQueryData([api.generate.status.path, cvData.id], {
         id: cvData.id,
         status: "processing",
         progress: t("cv_view.progress.ai_editing"),
@@ -303,7 +303,7 @@ export default function CvViewPage() {
         );
       });
       queryClient.invalidateQueries({ queryKey: [api.resumes.list.path] });
-      queryClient.invalidateQueries({ queryKey: [api.generate.status.path, cvData.id, "active"] });
+      queryClient.invalidateQueries({ queryKey: [api.generate.status.path, cvData.id] });
 
       setIsAiDialogOpen(false);
       setAiPrompt("");

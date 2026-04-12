@@ -213,6 +213,33 @@ async function editHtmlWithGroq({
   });
 }
 
+function extractStyleBlocks(html: string): string {
+  const styleMatches = html.match(/<style[\s\S]*?<\/style>/gi) ?? [];
+  const stylesheetLinks = html.match(/<link[^>]+rel=["']stylesheet["'][^>]*>/gi) ?? [];
+  return [...styleMatches, ...stylesheetLinks].join("\n");
+}
+
+function ensureTemplateStyles(generatedHtml: string, fallbackTemplateHtml: string): string {
+  if (/<style[\s\S]*?<\/style>/i.test(generatedHtml) || /rel=["']stylesheet["']/i.test(generatedHtml)) {
+    return generatedHtml;
+  }
+
+  const styleBlock = extractStyleBlocks(fallbackTemplateHtml);
+  if (!styleBlock) {
+    return generatedHtml;
+  }
+
+  if (/<\/head>/i.test(generatedHtml)) {
+    return generatedHtml.replace(/<\/head>/i, `${styleBlock}\n</head>`);
+  }
+
+  if (/<body[^>]*>/i.test(generatedHtml)) {
+    return generatedHtml.replace(/<body[^>]*>/i, (match) => `${match}\n${styleBlock}\n`);
+  }
+
+  return `${styleBlock}\n${generatedHtml}`;
+}
+
 export async function runGenerateCvJob({
   supabase,
   cvId,
@@ -250,11 +277,13 @@ export async function runGenerateCvJob({
       progress: "Generating CV with Groq...",
     });
 
-    const html = await generateHtmlWithGroq({
+    const generatedHtml = await generateHtmlWithGroq({
       templateHtml,
       docText,
       generationPrompt,
     });
+
+    const html = ensureTemplateStyles(generatedHtml, templateHtml);
 
     if (!html || html.length < 200) {
       throw new Error("Groq returned empty or invalid HTML output");
@@ -309,11 +338,13 @@ export async function runAiEditJob({
       currentHtml = await resolveTemplateHtml(cv.cv_templates.file_name);
     }
 
-    const html = await editHtmlWithGroq({
+    const generatedHtml = await editHtmlWithGroq({
       currentHtml,
       prompt,
       originalDocText: useOriginalDocumentContext ? cv.original_doc_text : null,
     });
+
+    const html = ensureTemplateStyles(generatedHtml, currentHtml);
 
     if (!html || html.length < 200) {
       throw new Error("Groq returned empty or invalid HTML output for AI edit");

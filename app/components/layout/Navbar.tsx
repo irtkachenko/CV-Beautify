@@ -24,7 +24,7 @@ export function Navbar() {
         <div className="flex justify-between items-center h-16">
 
           {/* Logo & Brand */}
-          <Link href="/" className="flex items-center gap-2 group cursor-pointer">
+          <Link href="/gallery" className="flex items-center gap-2 group cursor-pointer">
             <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-primary to-accent flex items-center justify-center text-white shadow-lg shadow-primary/20 group-hover:scale-105 transition-transform duration-300">
               <Sparkles className="w-4 h-4" />
             </div>
@@ -36,8 +36,8 @@ export function Navbar() {
           {/* Navigation Links */}
           <div className="hidden md:flex items-center space-x-1">
             <Link
-              href="/"
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200 flex items-center gap-2 ${pathname === "/"
+              href="/gallery"
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200 flex items-center gap-2 ${pathname === "/gallery"
                 ? "bg-primary/10 text-primary"
                 : "text-muted-foreground hover:bg-secondary hover:text-foreground"
                 }`}
@@ -122,9 +122,9 @@ export function Navbar() {
           >
             <div className="px-4 pt-2 pb-6 space-y-1">
               <Link
-                href="/"
+                href="/gallery"
                 onClick={() => setIsMenuOpen(false)}
-                className={`flex items-center gap-3 px-4 py-3 rounded-xl text-base font-medium transition-all ${pathname === "/"
+                className={`flex items-center gap-3 px-4 py-3 rounded-xl text-base font-medium transition-all ${pathname === "/gallery"
                   ? "bg-primary/10 text-primary"
                   : "text-muted-foreground hover:bg-secondary hover:text-foreground"
                   }`}

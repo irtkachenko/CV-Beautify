@@ -3,6 +3,23 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 
+function normalizePreviewHtml(rawHtml: string): string {
+  if (typeof window === "undefined") {
+    return rawHtml;
+  }
+
+  const parsed = new DOMParser().parseFromString(rawHtml, "text/html");
+  const styleNodes = Array.from(parsed.querySelectorAll("style, link[rel='stylesheet']"));
+  const styles = styleNodes.map((node) => node.outerHTML).join("\n");
+  const bodyContent = parsed.body?.innerHTML?.trim();
+
+  if (!bodyContent) {
+    return `${styles}\n${rawHtml}`;
+  }
+
+  return `${styles}\n${bodyContent}`;
+}
+
 export default function CvPreviewPage() {
   const params = useParams();
   const id = params.id as string;
@@ -16,6 +33,11 @@ export default function CvPreviewPage() {
       // Security: verify origin (should be same origin)
       if (event.origin !== window.location.origin) {
         console.warn("Rejected message from different origin:", event.origin);
+        return;
+      }
+
+      // Security: only accept token from parent window
+      if (event.source !== window.parent) {
         return;
       }
 
@@ -61,7 +83,7 @@ export default function CvPreviewPage() {
       }
 
       const htmlContent = await response.text();
-      setHtml(htmlContent);
+      setHtml(normalizePreviewHtml(htmlContent));
       
       // Notify parent that content is loaded
       if (window.parent !== window) {
@@ -116,15 +138,7 @@ export default function CvPreviewPage() {
           }
         }
       `}</style>
-      <div 
-        dangerouslySetInnerHTML={{ __html: html }}
-        style={{ 
-          width: "210mm", 
-          minHeight: "297mm",
-          margin: "0 auto",
-          background: "white",
-        }}
-      />
+      <div dangerouslySetInnerHTML={{ __html: html }} />
     </>
   );
 }

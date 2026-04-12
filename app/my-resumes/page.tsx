@@ -43,7 +43,7 @@ export default function MyResumesPage() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-10 border-b border-border/50 pb-6">
           <div>
-            <Link href="/" className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-primary transition-colors mb-4">
+            <Link href="/gallery" className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-primary transition-colors mb-4">
               <ArrowLeft className="w-4 h-4" /> {t("common.back_to_gallery")}
             </Link>
             <h1 className="font-display text-4xl font-bold text-foreground">{t("my_resumes.title")}</h1>
@@ -77,7 +77,7 @@ export default function MyResumesPage() {
               {t("my_resumes.empty_desc")}
             </p>
             <Link
-              href="/"
+              href="/gallery"
               className="px-8 py-3 rounded-full font-bold text-white bg-primary shadow-lg shadow-primary/25 hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200"
             >
               {t("my_resumes.browse_templates")}

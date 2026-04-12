@@ -43,6 +43,8 @@ export async function GET(
     // Sanitize HTML - allow style tags and semantic HTML5 tags for CV templates
     const safeHtml = domPurify.sanitize(cv.html_content, {
       ALLOWED_TAGS: [
+        // Document structure
+        "html", "head", "body", "title", "meta", "link",
         // Container elements
         "div", "span", "p", 
         // Headers
@@ -62,8 +64,9 @@ export async function GET(
         // Other common
         "blockquote", "code", "pre", "sub", "sup", "small"
       ],
-      ALLOWED_ATTR: ["href", "src", "alt", "class", "style", "id", "target", "rel"],
+      ALLOWED_ATTR: ["href", "src", "alt", "class", "style", "id", "target", "rel", "content", "name", "media"],
       ALLOW_DATA_ATTR: false,
+      WHOLE_DOCUMENT: true,
     });
 
     return new NextResponse(safeHtml, {

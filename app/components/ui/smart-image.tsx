@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 type SmartImageProps = {
   src: string;
@@ -20,11 +20,18 @@ export function SmartImage({
 }: SmartImageProps) {
   const [currentSrc, setCurrentSrc] = useState(src);
   const [isLoaded, setIsLoaded] = useState(false);
+  const imgRef = useRef<HTMLImageElement>(null);
 
   useEffect(() => {
     setCurrentSrc(src);
     setIsLoaded(false);
   }, [src]);
+
+  useEffect(() => {
+    if (imgRef.current?.complete) {
+      setIsLoaded(true);
+    }
+  }, [currentSrc]);
 
   return (
     <div className={`relative w-full h-full overflow-hidden ${className}`}>
@@ -35,6 +42,7 @@ export function SmartImage({
       )}
 
       <img
+        ref={imgRef}
         src={currentSrc}
         alt={alt}
         loading="lazy"

@@ -366,6 +366,9 @@ i18n
     interpolation: {
       escapeValue: false,
     },
+    react: {
+      useSuspense: false,
+    },
     returnNull: false,
   });
 

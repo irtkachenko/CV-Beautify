@@ -34,3 +34,11 @@ Adapters:
 - `.cursorrules`
 - `.windsurf/rules.md`
 - `.github/copilot-instructions.md`
+
+## Recent reliability fixes (2026-04-12)
+
+- Fixed tab navigation routes so authenticated users stay on `/gallery` and are not bounced through `/`.
+- Stabilized generation status polling query keys to prevent stale "processing forever" UI states.
+- Improved image loading resilience for cached template previews (prevents blank cards after tab/page switches).
+- Preserved template styles in secure CV render/preview by sanitizing full HTML documents and normalizing preview markup.
+- Disabled i18next suspense mode to avoid intermittent blank first render on the landing page.

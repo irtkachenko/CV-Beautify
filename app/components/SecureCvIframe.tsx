@@ -32,6 +32,11 @@ export function SecureCvIframe({
         return;
       }
 
+      // Security: only trust messages from this iframe instance
+      if (event.source !== iframeRef.current?.contentWindow) {
+        return;
+      }
+
       // Iframe is ready to receive token
       if (event.data?.type === "PREVIEW_READY") {
         setIsReady(true);

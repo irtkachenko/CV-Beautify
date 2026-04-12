@@ -58,12 +58,10 @@ export function useGenerateCv() {
 
 // Hook for polling an individual CV's status
 export function usePollingJob(jobId: number, initialStatus: string) {
-  const isJobActive = initialStatus === "pending" || initialStatus === "processing";
-  const pollingScope = isJobActive ? "active" : "inactive";
   const queryClient = useQueryClient();
 
   const query = useQuery({
-    queryKey: [api.generate.status.path, jobId, pollingScope],
+    queryKey: [api.generate.status.path, jobId],
     queryFn: async () => {
       const url = buildUrl(api.generate.status.path, { jobId });
 
@@ -102,7 +100,7 @@ export function usePollingJob(jobId: number, initialStatus: string) {
       }
       return false;
     },
-    enabled: jobId > 0 && isJobActive,
+    enabled: jobId > 0,
   });
 
   // Handle side effects (like invalidating queries) in useEffect, not in queryFn
