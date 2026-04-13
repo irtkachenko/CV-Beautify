@@ -51,14 +51,32 @@ function isModelRetryableError(error: unknown): boolean {
       ? String((error as { code?: unknown }).code || "").toLowerCase()
       : "";
 
-  return (
+  // Rate limit and temporary issues are retryable
+  const isRetryable = (
     code === "rate_limit_exceeded" ||
     message.includes("rate_limit_exceeded") ||
     message.includes("request too large") ||
     message.includes("tokens per minute") ||
-    message.includes("model") && message.includes("not found") ||
-    message.includes("model decommissioned")
+    message.includes("overloaded")
   );
+
+  // Model not found, decommissioned, or authentication errors are NOT retryable
+  const isNonRetryable = (
+    message.includes("model") && (message.includes("not found") || message.includes("does not exist") || message.includes("unavailable")) ||
+    message.includes("model decommissioned") ||
+    message.includes("invalid api key") ||
+    message.includes("unauthorized") ||
+    message.includes("authentication") ||
+    code === "invalid_api_key" ||
+    code === "unauthorized"
+  );
+
+  if (isNonRetryable) {
+    console.warn(`[groq] Model permanently unavailable: ${message}`);
+    return false;
+  }
+
+  return isRetryable;
 }
 
 function getGroqClient() {
@@ -111,8 +129,13 @@ async function runGroqCompletionWithFallback({
   const groq = getGroqClient();
   const modelChain = await getGroqModelChain();
   let lastError: unknown;
+  const attemptedModels: string[] = [];
+  const permanentFailures: string[] = [];
+
+  console.info(`[groq] Trying ${modelChain.length} models in chain: ${modelChain.join(", ")}`);
 
   for (const model of modelChain) {
+    attemptedModels.push(model);
     try {
       const completion = await groq.chat.completions.create({
         model,
@@ -121,19 +144,36 @@ async function runGroqCompletionWithFallback({
         messages,
       });
 
-      return completion.choices[0]?.message?.content?.trim() || "";
+      const result = completion.choices[0]?.message?.content?.trim() || "";
+      console.info(`[groq] Successfully used model '${model}'`);
+      return result;
     } catch (error) {
       lastError = error;
-      const shouldTryNext = isModelRetryableError(error) && model !== modelChain[modelChain.length - 1];
+      const errorMessage = extractErrorMessage(error);
+      const isRetryable = isModelRetryableError(error);
+      const isLastModel = model === modelChain[modelChain.length - 1];
 
-      console.warn(`[groq] model '${model}' failed: ${extractErrorMessage(error)}`);
-      if (!shouldTryNext) {
-        throw error;
+      if (!isRetryable) {
+        permanentFailures.push(model);
+      }
+
+      console.warn(`[groq] model '${model}' failed: ${errorMessage} (retryable: ${isRetryable})`);
+      
+      if (!isRetryable || isLastModel) {
+        break;
       }
     }
   }
 
-  throw lastError instanceof Error ? lastError : new Error("All Groq models failed");
+  // Construct a comprehensive error message
+  const errorSummary = `All Groq models failed. Attempted: ${attemptedModels.join(", ")}. Permanent failures: ${permanentFailures.join(", ") || "none"}. Last error: ${extractErrorMessage(lastError)}`;
+  
+  // If all models are permanently unavailable, provide a clear message
+  if (permanentFailures.length === modelChain.length) {
+    throw new Error("No AI models are currently available. Please try again later or contact support.");
+  }
+
+  throw new Error(errorSummary);
 }
 
 async function generateHtmlWithGroq({

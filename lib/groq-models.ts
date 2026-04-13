@@ -8,10 +8,11 @@ export interface GroqModel {
 }
 
 // Hardcoded fallback models in case API is unavailable
+// Using currently available and reliable models as of 2024
 const FALLBACK_MODELS = [
-  "llama-3.3-70b-versatile",
+  "llama-3.1-70b-versatile",
   "llama-3.1-8b-instant", 
-  "meta-llama/llama-4-scout-17b-16e-instruct"
+  "mixtral-8x7b-32768"
 ];
 
 // Cache for models to avoid repeated API calls
@@ -36,18 +37,31 @@ export async function getAvailableGroqModels(): Promise<GroqModel[]> {
   const apiKey = process.env.GROQ_API_KEY;
   if (!apiKey) {
     console.warn("GROQ_API_KEY is not configured, using fallback models");
-    return FALLBACK_MODELS.map(id => ({
+    const fallbackModels = FALLBACK_MODELS.map(id => ({
       id,
       object: "model",
       created: Date.now(),
       owned_by: "fallback"
     }));
+    
+    // Cache fallback models for shorter time
+    modelsCache = {
+      models: fallbackModels,
+      timestamp: Date.now(),
+      ttl: 30000 // 30 seconds for API key issues
+    };
+    
+    return fallbackModels;
   }
 
   const groq = new Groq({ apiKey });
 
   try {
     const models = await groq.models.list();
+    
+    if (!models.data || models.data.length === 0) {
+      throw new Error("No models returned from Groq API");
+    }
     
     // Cache the result
     modelsCache = {
@@ -56,9 +70,16 @@ export async function getAvailableGroqModels(): Promise<GroqModel[]> {
       ttl: CACHE_TTL
     };
     
+    console.info(`[groq] Successfully fetched ${models.data.length} models from API`);
     return models.data;
   } catch (error) {
-    console.error("Failed to fetch Groq models, using fallback:", error);
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    console.error("Failed to fetch Groq models, using fallback:", errorMessage);
+    
+    // Check if it's an authentication error
+    if (errorMessage.includes("unauthorized") || errorMessage.includes("invalid api key")) {
+      console.error("Groq API key appears to be invalid or expired");
+    }
     
     // Return fallback models if API fails
     const fallbackModels = FALLBACK_MODELS.map(id => ({
@@ -75,6 +96,7 @@ export async function getAvailableGroqModels(): Promise<GroqModel[]> {
       ttl: 60000 // 1 minute for fallback
     };
     
+    console.warn(`[groq] Using ${fallbackModels.length} fallback models due to API failure`);
     return fallbackModels;
   }
 }
