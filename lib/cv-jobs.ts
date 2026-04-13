@@ -203,8 +203,7 @@ async function generateHtmlWithGroq({
     messages: [
       {
         role: "system",
-        content:
-          "You are an expert resume formatter. Return only complete HTML content suitable for direct rendering.",
+        content: "You are an expert resume formatter. Return only complete HTML content suitable for direct rendering.",
       },
       { role: "user", content: userPrompt },
     ],
@@ -245,8 +244,7 @@ async function editHtmlWithGroq({
     messages: [
       {
         role: "system",
-        content:
-          "You are an expert resume editor. Return only complete HTML content suitable for direct rendering.",
+        content: "You are an expert resume editor. Return only complete HTML content suitable for direct rendering.",
       },
       { role: "user", content: userPrompt },
     ],

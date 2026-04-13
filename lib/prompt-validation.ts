@@ -3,6 +3,8 @@
  * before sending to AI generation
  */
 
+import { loadPrompt } from "./prompts";
+
 export interface ValidationResult {
   isValid: boolean;
   warning?: string;
@@ -23,7 +25,7 @@ export function validatePrompt(prompt: string): ValidationResult {
   const securityPatterns = [
     /javascript:/i,
     /<script/i,
-    /on\w+\s*=/i, // onclick, onload, etc.
+    /on\w+\s*=/i,
     /eval\s*\(/i,
     /document\./i,
     /window\./i,
@@ -39,7 +41,7 @@ export function validatePrompt(prompt: string): ValidationResult {
     /binding:/i,
   ];
 
-  // Profanity patterns (basic list - can be expanded)
+  // Profanity patterns
   const profanityPatterns = [
     /fuck/i,
     /shit/i,
@@ -54,6 +56,15 @@ export function validatePrompt(prompt: string): ValidationResult {
     /whore/i,
     /slut/i,
     /cunt/i,
+  ];
+
+  // Suspicious patterns
+  const suspiciousPatterns = [
+    /\$\{.*\}/i,
+    /{{.*}}/i,
+    /<%.*%>/i,
+    /\\x[0-9a-f]{2}/i,
+    /\\u[0-9a-f]{4}/i,
   ];
 
   // Check for security issues
@@ -76,15 +87,7 @@ export function validatePrompt(prompt: string): ValidationResult {
     }
   }
 
-  // Check for suspicious patterns that might indicate injection attempts
-  const suspiciousPatterns = [
-    /\$\{.*\}/i, // Template injection
-    /{{.*}}/i, // Template injection
-    /<%.*%>/i, // Template injection
-    /\\x[0-9a-f]{2}/i, // Hex encoding
-    /\\u[0-9a-f]{4}/i, // Unicode encoding
-  ];
-
+  // Check for suspicious patterns
   for (const pattern of suspiciousPatterns) {
     if (pattern.test(prompt)) {
       return {
@@ -94,7 +97,7 @@ export function validatePrompt(prompt: string): ValidationResult {
     }
   }
 
-  // Check for extremely long prompts that might be attempts to bypass filters
+  // Check for extremely long prompts
   if (prompt.length > 2000) {
     return {
       isValid: false,
@@ -127,9 +130,8 @@ export function validateGenerationPrompt(generationPrompt?: string | null): Vali
 
   const result = validatePrompt(generationPrompt);
 
-  // Additional checks specific to CV generation
+  // Additional checks for CV generation
   if (result.isValid) {
-    // Check for requests to generate inappropriate content
     const inappropriatePatterns = [
       /fake/i,
       /false/i,
@@ -159,9 +161,8 @@ export function validateGenerationPrompt(generationPrompt?: string | null): Vali
 export function validateEditPrompt(editPrompt: string): ValidationResult {
   const result = validatePrompt(editPrompt);
 
-  // Additional checks specific to CV editing
+  // Additional checks for CV editing
   if (result.isValid) {
-    // Check for requests to make inappropriate changes
     const inappropriateEditPatterns = [
       /remove.*experience/i,
       /hide.*employment/i,
@@ -197,30 +198,13 @@ export async function validatePromptWithAI(prompt: string, context: 'generation'
     const Groq = require("groq-sdk").default;
     const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
-    const contextInstructions = context === 'generation' 
-      ? "This is a prompt for generating a professional CV/resume."
-      : "This is a prompt for editing an existing professional CV/resume.";
-
-    const systemPrompt = `You are a content safety validator for professional document generation. ${contextInstructions}
-
-Analyze the following prompt for:
-1. Malicious code, scripts, or security threats
-2. Inappropriate language, profanity, or offensive content  
-3. Requests for fake, false, or misleading information
-4. Unprofessional or harmful requests
-5. Any content that would be inappropriate for a business/professional document
-
-Respond with ONLY:
-"SAFE" if the prompt is completely safe and appropriate
-"BLOCKED: [brief reason]" if the prompt should be blocked
-
-Be very strict - if there's any doubt, block it.`;
+    const promptTemplate = context === 'generation' ? 'validate-generation' : 'validate-edit';
+    const systemPrompt = await loadPrompt(promptTemplate, { prompt });
 
     const response = await groq.chat.completions.create({
       model: "llama-3.1-8b-instant",
       messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: prompt }
+        { role: "user", content: systemPrompt }
       ],
       max_tokens: 50,
       temperature: 0.1
