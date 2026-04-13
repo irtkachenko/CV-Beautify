@@ -67,6 +67,8 @@ const en = {
     choose_file: "Choose .docx file",
     error_file_required: "File Required",
     error_file_desc: "Please select a file to upload",
+    prompt_label: "Additional Instructions (optional)",
+    prompt_placeholder: "Add specific requirements or preferences for your CV generation...",
   },
   toast: {
     gen_started_title: "Generation Started",
