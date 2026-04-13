@@ -29,9 +29,6 @@ export function useGenerateCv() {
       const res = await authedFetch(api.generate.start.path, {
         method: api.generate.start.method,
         body: formData,
-        headers: {
-          'x-language': i18n.language || 'ua'
-        }
       });
 
       if (!res.ok) {

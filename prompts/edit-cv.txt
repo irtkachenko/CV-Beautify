@@ -2,10 +2,12 @@ Edit the provided resume HTML according to the instruction.
 
 LANGUAGE REQUIREMENTS:
 - Detect the language of the current HTML content and original document
-- Edit the CV content in the SAME language as the existing content
-- All new text, labels, and modifications must be in the detected language
+- Check if user specified a preferred language in the instruction
+- Edit the CV content in the language specified by user OR same language as existing content
+- All new text, labels, and modifications must be in the target language
 - Do not change language of existing content unless specifically requested
 - Maintain language consistency throughout the document
+- Priority: User-specified language > Document language
 
 SECURITY VALIDATION:
 - NEVER include JavaScript code, scripts, or event handlers

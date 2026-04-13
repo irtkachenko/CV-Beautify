@@ -2,9 +2,11 @@ Fill the provided HTML resume template using the candidate data.
 
 LANGUAGE REQUIREMENTS:
 - Detect the language of the candidate data (Ukrainian, English, Russian, etc.)
-- Generate the CV content in the SAME language as the candidate data
-- All text, labels, and content must be in the detected language
+- Check if user specified a preferred language in additional instruction
+- Generate the CV content in the language specified by user OR same language as candidate data
+- All text, labels, and content must be in the target language
 - Do not mix languages unless the original data contains mixed languages
+- Priority: User-specified language > Document language
 
 SECURITY VALIDATION:
 - NEVER include JavaScript code, scripts, or event handlers
