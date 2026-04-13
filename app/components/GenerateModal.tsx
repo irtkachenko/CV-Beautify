@@ -138,6 +138,8 @@ export function GenerateModal({ template, isOpen, onClose }: GenerateModalProps)
               onFileSelect={handleFileSelect}
               onFileRemove={handleFileRemove}
               isPending={isPending}
+              generationPrompt={generationPrompt}
+              onPromptChange={setGenerationPrompt}
             />
           </div>
 

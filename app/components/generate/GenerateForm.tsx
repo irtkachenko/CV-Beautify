@@ -10,6 +10,8 @@ type GenerateFormProps = {
   onFileSelect: (file: File) => void;
   onFileRemove: () => void;
   isPending: boolean;
+  generationPrompt: string;
+  onPromptChange: (prompt: string) => void;
 };
 
 export function GenerateForm({
@@ -18,6 +20,8 @@ export function GenerateForm({
   onFileSelect,
   onFileRemove,
   isPending,
+  generationPrompt,
+  onPromptChange,
 }: GenerateFormProps) {
   const { t } = useTranslation();
 
@@ -59,6 +63,24 @@ export function GenerateForm({
           </button>
         </div>
       ) : null}
+
+      <div className="flex flex-col gap-2">
+        <label htmlFor="prompt" className="text-sm font-medium text-foreground">
+          {t("modal.prompt_label") || "Additional Instructions (optional)"}
+        </label>
+        <textarea
+          id="prompt"
+          value={generationPrompt}
+          onChange={(e) => onPromptChange(e.target.value)}
+          disabled={isPending}
+          placeholder={t("modal.prompt_placeholder") || "Add specific requirements or preferences for your CV generation..."}
+          className="w-full min-h-[80px] px-3 py-2 text-sm border border-border rounded-lg bg-background resize-none focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
+          maxLength={500}
+        />
+        <div className="text-xs text-muted-foreground text-right">
+          {generationPrompt.length}/500
+        </div>
+      </div>
 
       <button
         type="submit"
