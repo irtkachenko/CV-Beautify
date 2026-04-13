@@ -421,18 +421,6 @@ export default function CvViewPage() {
             {/* Desktop buttons */}
             <div className="hidden xl2:flex items-center gap-3">
               <button
-                onClick={() => {
-                  setUseOriginalDocumentContext(false);
-                  setIsAiDialogOpen(true);
-                }}
-                disabled={!canEditWithAi}
-                className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
-              >
-                <Sparkles className="w-4 h-4" />
-                <span>{t("cv_view.edit_with_ai")}</span>
-              </button>
-
-              <button
                 onClick={handleDownloadPDF}
                 disabled={isGeneratingPdf || isProcessing || !pdfUrl}
                 className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
@@ -473,19 +461,6 @@ export default function CvViewPage() {
               className="xl2:hidden bg-white border-t border-gray-200"
             >
               <div className="px-4 py-3 space-y-2">
-                <button
-                  onClick={() => {
-                    setUseOriginalDocumentContext(false);
-                    setIsAiDialogOpen(true);
-                    setIsMobileMenuOpen(false);
-                  }}
-                  disabled={!canEditWithAi}
-                  className="w-full flex items-center gap-3 px-4 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <Sparkles className="w-4 h-4" />
-                  <span>{t("cv_view.edit_with_ai")}</span>
-                </button>
-
                 <button
                   onClick={() => {
                     handleDownloadPDF();
