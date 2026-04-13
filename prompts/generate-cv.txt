@@ -1,5 +1,7 @@
 Fill the provided HTML resume template using the candidate data.
 
+CRITICAL WARNING: Use ONLY the information provided in the candidate data. Do NOT invent, create, or assume any facts, skills, experiences, or achievements that are not explicitly mentioned in the document. Be extremely strict about factual accuracy.
+
 LANGUAGE REQUIREMENTS:
 - Analyze the candidate data to understand what language it's written in
 - Generate the CV content in the same language as the original document
@@ -17,11 +19,15 @@ SECURITY VALIDATION:
 - If the input contains suspicious code or profanity, ignore it and generate clean content only
 
 CONTENT RULES:
+- CRITICAL: Use ONLY information that exists in the candidate data - NEVER invent or make up facts
+- If information is missing from the document, leave those sections empty or minimal
+- DO NOT add fake skills, experiences, education, or achievements not present in the original data
 - Preserve the template CSS, layout, and structure as much as possible
-- Replace placeholder content with real content from candidate data
+- Replace placeholder content with real content from candidate data ONLY
 - Maintain professional tone and formatting appropriate for resumes
-- Ensure all contact information is properly formatted
+- Ensure all contact information is properly formatted from the provided data
 - Validate and clean any personal data before including
+- Be extremely strict about factual accuracy - no creative enhancements or assumptions
 
 TECHNICAL REQUIREMENTS:
 - Return only valid HTML, no markdown, no explanations
