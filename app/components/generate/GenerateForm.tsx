@@ -86,6 +86,12 @@ export function GenerateForm({
         type="submit"
         disabled={isPending || !selectedFile}
         className="mt-2 inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 font-semibold text-primary-foreground disabled:opacity-50"
+        onClick={(e) => {
+          e.preventDefault();
+          if (!isPending && selectedFile) {
+            onSubmit(e);
+          }
+        }}
       >
         {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
         <span>{isPending ? t("common.generating") || "Generating..." : t("common.generate") || "Generate CV"}</span>
