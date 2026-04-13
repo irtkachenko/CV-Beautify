@@ -150,7 +150,7 @@ async function generateHtmlWithGroq({
     template_html: templateHtml,
   });
 
-  return runGroqCompletionWithFallback({
+  const result = await runGroqCompletionWithFallback({
     temperature: 0.3,
     maxTokens: 6000,
     messages: [
@@ -162,6 +162,13 @@ async function generateHtmlWithGroq({
       { role: "user", content: userPrompt },
     ],
   });
+
+  // Clean up markdown code block wrappers if present
+  return result
+    .replace(/^```html\s*\n?/i, '') // Remove opening ```html
+    .replace(/^```\s*\n?/, '')      // Remove opening ```
+    .replace(/\n?```\s*$/i, '')     // Remove closing ```
+    .trim();
 }
 
 async function editHtmlWithGroq({
@@ -179,7 +186,7 @@ async function editHtmlWithGroq({
     current_html: currentHtml,
   });
 
-  return runGroqCompletionWithFallback({
+  const result = await runGroqCompletionWithFallback({
     temperature: 0.4,
     maxTokens: 6000,
     messages: [
@@ -191,6 +198,13 @@ async function editHtmlWithGroq({
       { role: "user", content: userPrompt },
     ],
   });
+
+  // Clean up markdown code block wrappers if present
+  return result
+    .replace(/^```html\s*\n?/i, '') // Remove opening ```html
+    .replace(/^```\s*\n?/, '')      // Remove opening ```
+    .replace(/\n?```\s*$/i, '')     // Remove closing ```
+    .trim();
 }
 
 function extractStyleBlocks(html: string): string {
