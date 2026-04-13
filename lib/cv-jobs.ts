@@ -5,6 +5,7 @@ import Groq from "groq-sdk";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getModelChain } from "./groq-models";
 import { loadPrompt } from "./prompts";
+import { comprehensivePromptValidation } from "./prompt-validation";
 
 type TemplateRow = {
   id: number;
@@ -144,8 +145,14 @@ async function generateHtmlWithGroq({
   docText: string;
   generationPrompt?: string | null;
 }) {
+  // Validate the generation prompt with comprehensive AI + regex validation
+  const validation = await comprehensivePromptValidation(generationPrompt || "", 'generation');
+  if (!validation.isValid) {
+    throw new Error(validation.warning || "Invalid prompt content");
+  }
+
   const userPrompt = await loadPrompt("generate-cv", {
-    additional_instruction: generationPrompt || "",
+    additional_instruction: validation.cleanedPrompt || generationPrompt || "",
     doc_text: docText,
     template_html: templateHtml,
   });
@@ -180,8 +187,14 @@ async function editHtmlWithGroq({
   prompt: string;
   originalDocText?: string | null;
 }) {
+  // Validate the edit prompt with comprehensive AI + regex validation
+  const validation = await comprehensivePromptValidation(prompt, 'edit');
+  if (!validation.isValid) {
+    throw new Error(validation.warning || "Invalid prompt content");
+  }
+
   const userPrompt = await loadPrompt("edit-cv", {
-    prompt: prompt,
+    prompt: validation.cleanedPrompt || prompt,
     original_doc_context: originalDocText ? `Original candidate context:\n${originalDocText}` : "",
     current_html: currentHtml,
   });

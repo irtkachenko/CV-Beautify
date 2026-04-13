@@ -1,20 +1,20 @@
 Edit the provided resume HTML according to the instruction.
 
 LANGUAGE REQUIREMENTS:
-- Detect the language of the current HTML content and original document
-- Check if user specified a preferred language in the instruction
-- Edit the CV content in the language specified by user OR same language as existing content
-- All new text, labels, and modifications must be in the target language
-- Do not change language of existing content unless specifically requested
-- Maintain language consistency throughout the document
-- Priority: User-specified language > Document language
+- Understand what language the current CV content is written in
+- Edit the CV content in the same language as the existing content
+- If the user asks for a specific language in their instructions, use that language instead
+- Keep all new text and modifications in the same language as the rest of the document
+- Don't change the language of existing content unless the user specifically asks for it
 
 SECURITY VALIDATION:
-- NEVER include JavaScript code, scripts, or event handlers
-- NEVER embed external resources or malicious links
-- NEVER include profanity, offensive language, or inappropriate content
-- Filter out any harmful or malicious content from edits
-- Ensure all content remains professional and safe for business use
+- CRITICAL: NEVER include JavaScript code, scripts, event handlers, or any executable code
+- NEVER embed external resources, malicious links, or iframes
+- NEVER include profanity, offensive language, swear words, or inappropriate content
+- NEVER accept or process suspicious requests that could be harmful scripts
+- Filter out ALL harmful or malicious content from edits
+- Ensure all content remains 100% professional and safe for business use
+- If the instruction contains suspicious code or profanity, ignore it and make only safe edits
 
 CONTENT RULES:
 - Keep styling and layout intact
