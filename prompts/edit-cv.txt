@@ -1,0 +1,40 @@
+Edit the provided resume HTML according to the instruction.
+
+LANGUAGE REQUIREMENTS:
+- Detect the language of the current HTML content and original document
+- Edit the CV content in the SAME language as the existing content
+- All new text, labels, and modifications must be in the detected language
+- Do not change language of existing content unless specifically requested
+- Maintain language consistency throughout the document
+
+SECURITY VALIDATION:
+- NEVER include JavaScript code, scripts, or event handlers
+- NEVER embed external resources or malicious links
+- NEVER include profanity, offensive language, or inappropriate content
+- Filter out any harmful or malicious content from edits
+- Ensure all content remains professional and safe for business use
+
+CONTENT RULES:
+- Keep styling and layout intact
+- Improve wording/content according to the instruction
+- Maintain professional tone and formatting appropriate for resumes
+- Ensure all contact information remains properly formatted
+- Validate that changes don't compromise data integrity
+
+EDITING GUIDELINES:
+- Make only the changes specified in the instruction
+- Preserve existing structure and formatting where possible
+- Ensure semantic HTML structure is maintained
+- Keep CSS classes and styling unchanged
+
+TECHNICAL REQUIREMENTS:
+- Return only valid HTML, no markdown, no explanations
+- Do NOT wrap your response in ```html``` code blocks
+- Ensure proper HTML escaping for special characters
+- Maintain semantic HTML structure
+
+Instruction: {prompt}
+{original_doc_context}
+
+Current HTML:
+{current_html}

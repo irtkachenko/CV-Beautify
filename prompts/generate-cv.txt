@@ -1,0 +1,35 @@
+Fill the provided HTML resume template using the candidate data.
+
+LANGUAGE REQUIREMENTS:
+- Detect the language of the candidate data (Ukrainian, English, Russian, etc.)
+- Generate the CV content in the SAME language as the candidate data
+- All text, labels, and content must be in the detected language
+- Do not mix languages unless the original data contains mixed languages
+
+SECURITY VALIDATION:
+- NEVER include JavaScript code, scripts, or event handlers
+- NEVER embed external resources or malicious links
+- NEVER include profanity, offensive language, or inappropriate content
+- Filter out any harmful or malicious content from the original data
+- Ensure all content is professional and safe for business use
+
+CONTENT RULES:
+- Preserve the template CSS, layout, and structure as much as possible
+- Replace placeholder content with real content from candidate data
+- Maintain professional tone and formatting appropriate for resumes
+- Ensure all contact information is properly formatted
+- Validate and clean any personal data before including
+
+TECHNICAL REQUIREMENTS:
+- Return only valid HTML, no markdown, no explanations
+- Do NOT wrap your response in ```html``` code blocks
+- Ensure proper HTML escaping for special characters
+- Maintain semantic HTML structure
+
+{additional_instruction}
+
+Candidate data:
+{doc_text}
+
+HTML template:
+{template_html}

@@ -4,6 +4,7 @@ import mammoth from "mammoth";
 import Groq from "groq-sdk";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getModelChain } from "./groq-models";
+import { loadPrompt } from "./prompts";
 
 type TemplateRow = {
   id: number;
@@ -143,22 +144,11 @@ async function generateHtmlWithGroq({
   docText: string;
   generationPrompt?: string | null;
 }) {
-  const userPrompt = [
-    "Fill the provided HTML resume template using the candidate data.",
-    "Rules:",
-    "- Preserve the template CSS, layout, and structure as much as possible.",
-    "- Replace placeholder content with real content from candidate data.",
-    "- Return only valid HTML, no markdown, no explanations.",
-    generationPrompt ? `Additional instruction: ${generationPrompt}` : "",
-    "",
-    "Candidate data:",
-    docText,
-    "",
-    "HTML template:",
-    templateHtml,
-  ]
-    .filter(Boolean)
-    .join("\n");
+  const userPrompt = await loadPrompt("generate-cv", {
+    additional_instruction: generationPrompt || "",
+    doc_text: docText,
+    template_html: templateHtml,
+  });
 
   return runGroqCompletionWithFallback({
     temperature: 0.3,
@@ -183,21 +173,11 @@ async function editHtmlWithGroq({
   prompt: string;
   originalDocText?: string | null;
 }) {
-  const userPrompt = [
-    "Edit the provided resume HTML according to the instruction.",
-    "Rules:",
-    "- Keep styling and layout intact.",
-    "- Improve wording/content per instruction.",
-    "- Return only valid HTML, no markdown, no explanations.",
-    "",
-    `Instruction: ${prompt}`,
-    originalDocText ? `Original candidate context:\n${originalDocText}` : "",
-    "",
-    "Current HTML:",
-    currentHtml,
-  ]
-    .filter(Boolean)
-    .join("\n");
+  const userPrompt = await loadPrompt("edit-cv", {
+    prompt: prompt,
+    original_doc_context: originalDocText ? `Original candidate context:\n${originalDocText}` : "",
+    current_html: currentHtml,
+  });
 
   return runGroqCompletionWithFallback({
     temperature: 0.4,
