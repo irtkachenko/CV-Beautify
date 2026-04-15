@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/toaster";
 import { QueryProvider } from "@/components/query-provider";
 import { I18nProvider } from "@/components/i18n-provider";
+import { Analytics } from "@vercel/analytics/next";
 
 export const metadata: Metadata = {
   title: "CV Beautify",
@@ -29,6 +30,7 @@ export default function RootLayout({
             </I18nProvider>
           </TooltipProvider>
         </QueryProvider>
+        <Analytics />
       </body>
     </html>
   );
