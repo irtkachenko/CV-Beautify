@@ -179,6 +179,10 @@ export function usePollingJob(jobId: number, initialStatus: string) {
       queryClient.invalidateQueries({ queryKey: [api.resumes.list.path] });
       // Also invalidate this specific job query to ensure fresh data on remount
       queryClient.invalidateQueries({ queryKey: [api.generate.status.path, jobId] });
+
+      window.setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: [api.resumes.list.path] });
+      }, 2000);
     }
   }, [query.data, queryClient, jobId]); // Use query.data instead of query.data?.status to catch all changes
 

@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api, buildUrl } from "@shared/routes";
 import { useToast } from "@/hooks/use-toast";
@@ -7,6 +8,7 @@ import { authedFetch } from "@lib/authed-fetch";
 import type { GeneratedCvResponse, ResumesListResponse } from "@shared/routes";
 
 export const activeResumeJobsQueryKey = ["active-resume-jobs"];
+const ACTIVE_JOB_GRACE_MS = 15000;
 
 function mergeResumeLists(
   serverData: ResumesListResponse,
@@ -82,6 +84,31 @@ export function useMyResumes() {
   const activeJobs = activeJobsQuery.data || [];
   const serverData = resumesQuery.data;
 
+  useEffect(() => {
+    if (!serverData) {
+      return;
+    }
+
+    const serverIds = new Set(serverData.cvs.map((cv) => cv.id));
+    const now = Date.now();
+
+    queryClient.setQueryData<GeneratedCvResponse[]>(activeResumeJobsQueryKey, (current = []) =>
+      current.filter((cv) => {
+        if (serverIds.has(cv.id)) {
+          return false;
+        }
+
+        const isTerminal = cv.status === "complete" || cv.status === "failed";
+        if (!isTerminal) {
+          return true;
+        }
+
+        const ageMs = now - new Date(cv.updatedAt).getTime();
+        return ageMs < ACTIVE_JOB_GRACE_MS;
+      })
+    );
+  }, [serverData, queryClient]);
+
   const mergedData = serverData
     ? mergeResumeLists(serverData, activeJobs)
     : activeJobs.length > 0
@@ -120,6 +147,23 @@ export function useDeleteResume() {
       }
     },
     onSuccess: (_data, id) => {
+      queryClient.setQueryData<ResumesListResponse | undefined>(
+        [api.resumes.list.path],
+        (current) => {
+          if (!current) {
+            return current;
+          }
+
+          const nextCvs = current.cvs.filter((cv) => cv.id !== id);
+          return {
+            ...current,
+            cvs: nextCvs,
+            count: nextCvs.length,
+            canCreateMore: nextCvs.length < current.limit,
+          };
+        }
+      );
+
       queryClient.invalidateQueries({ queryKey: [api.resumes.list.path] });
       queryClient.setQueryData<GeneratedCvResponse[]>(activeResumeJobsQueryKey, (current = []) =>
         current.filter((cv) => cv.id !== id)
