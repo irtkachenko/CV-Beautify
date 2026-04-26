@@ -15,16 +15,7 @@ export async function GET(request: NextRequest) {
 
     const { data: cvs, error } = await supabase
       .from("generated_cvs")
-      .select(`
-        *,
-        cv_templates (
-          id,
-          name,
-          file_name,
-          screenshot_url,
-          description
-        )
-      `)
+      .select("*")
       .eq("user_id", userId)
       .order("updated_at", { ascending: false });
 
@@ -33,7 +24,31 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ message: "Failed to fetch resumes" }, { status: 500 });
     }
 
-    const mappedCvs = (cvs || []).map(mapGeneratedCvRow);
+    const templateIds = Array.from(
+      new Set((cvs || []).map((cv) => cv.template_id).filter((id): id is number => typeof id === "number"))
+    );
+
+    let templatesById = new Map<number, unknown>();
+    if (templateIds.length > 0) {
+      const { data: templates, error: templatesError } = await supabase
+        .from("cv_templates")
+        .select("id, name, file_name, screenshot_url, description, created_at")
+        .in("id", templateIds);
+
+      if (templatesError) {
+        console.error("Failed to fetch templates for resumes:", templatesError);
+        return NextResponse.json({ message: "Failed to fetch resumes" }, { status: 500 });
+      }
+
+      templatesById = new Map((templates || []).map((template) => [template.id, template]));
+    }
+
+    const mappedCvs = (cvs || []).map((cv) =>
+      mapGeneratedCvRow({
+        ...cv,
+        cv_templates: templatesById.get(cv.template_id) ?? null,
+      })
+    );
     
     // Include CV count and limit information for frontend
     const response = {
