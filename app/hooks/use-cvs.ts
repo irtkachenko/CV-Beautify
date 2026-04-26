@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, buildUrl } from "@shared/routes";
 import { useToast } from "@/hooks/use-toast";
 import i18n from "@lib/i18n";
@@ -11,6 +12,8 @@ type UseMyResumesOptions = {
   enabled?: boolean;
   watchProcessing?: boolean;
 };
+
+const RESUMES_QUERY_KEY = ["api", "resumes", "list"] as const;
 
 async function fetchResumesList(): Promise<ResumesListResponse> {
   const res = await authedFetch(`${api.resumes.list.path}?_t=${Date.now()}`);
@@ -28,161 +31,93 @@ async function fetchResumesList(): Promise<ResumesListResponse> {
 
 export function useMyResumes(options: UseMyResumesOptions = {}) {
   const { enabled = true, watchProcessing = false } = options;
-  const [data, setData] = useState<ResumesListResponse | null>(null);
-  const [isLoading, setIsLoading] = useState(enabled);
-  const [error, setError] = useState<Error | null>(null);
-  const [refreshTick, setRefreshTick] = useState(0);
-  const isMountedRef = useRef(true);
-  const hasLoadedOnceRef = useRef(false);
+  const queryClient = useQueryClient();
+
+  const query = useQuery<ResumesListResponse, Error>({
+    queryKey: RESUMES_QUERY_KEY,
+    queryFn: fetchResumesList,
+    enabled,
+    staleTime: 0,
+    refetchOnWindowFocus: enabled,
+    retry: 2,
+    refetchInterval:
+      enabled && watchProcessing
+        ? (current) => {
+            const resumes = current.state.data;
+            const hasProcessing = Boolean(
+              resumes?.cvs.some((cv) => cv.status === "pending" || cv.status === "processing")
+            );
+            const hasError = Boolean(current.state.error);
+            return hasProcessing || hasError || !resumes ? 3000 : 10000;
+          }
+        : false,
+  });
 
   const refresh = useCallback(() => {
-    setRefreshTick((tick) => tick + 1);
-  }, []);
-
-  const hasProcessing = useMemo(
-    () => Boolean(data?.cvs.some((cv) => cv.status === "pending" || cv.status === "processing")),
-    [data]
-  );
-
-  useEffect(() => {
-    isMountedRef.current = true;
-    return () => {
-      isMountedRef.current = false;
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!enabled) {
-      setIsLoading(false);
-      setData(null);
-      setError(null);
-      hasLoadedOnceRef.current = false;
-      return;
-    }
-
-    let cancelled = false;
-    const isBackgroundRefresh = hasLoadedOnceRef.current;
-
-    const load = async () => {
-      try {
-        if (!isBackgroundRefresh) {
-          setIsLoading(true);
-        }
-        setError(null);
-        const next = await fetchResumesList();
-        if (!cancelled && isMountedRef.current) {
-          setData(next);
-          hasLoadedOnceRef.current = true;
-        }
-      } catch (nextError) {
-        if (!cancelled && isMountedRef.current) {
-          setError(nextError instanceof Error ? nextError : new Error("Failed to fetch resumes"));
-          if (!hasLoadedOnceRef.current) {
-            setData(null);
-          }
-        }
-      } finally {
-        if (!cancelled && isMountedRef.current && !isBackgroundRefresh) {
-          setIsLoading(false);
-        }
-      }
-    };
-
-    void load();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [enabled, refreshTick]);
-
-  useEffect(() => {
-    if (!enabled || !watchProcessing) {
-      return;
-    }
-
-    const intervalId = window.setInterval(() => {
-      setRefreshTick((tick) => tick + 1);
-    }, hasProcessing || Boolean(error) || !hasLoadedOnceRef.current ? 3000 : 10000);
-
-    return () => {
-      window.clearInterval(intervalId);
-    };
-  }, [enabled, error, hasProcessing, watchProcessing]);
-
-  useEffect(() => {
-    if (!enabled) {
-      return;
-    }
-
-    const handleFocus = () => {
-      setRefreshTick((tick) => tick + 1);
-    };
-
-    window.addEventListener("focus", handleFocus);
-    return () => {
-      window.removeEventListener("focus", handleFocus);
-    };
-  }, [enabled]);
+    void queryClient.invalidateQueries({ queryKey: RESUMES_QUERY_KEY });
+  }, [queryClient]);
 
   return {
-    data,
-    isLoading,
-    error,
+    data: query.data ?? null,
+    isLoading: query.isLoading || query.isFetching,
+    error: query.error ?? null,
     refresh,
   };
 }
 
 export function useDeleteResume() {
   const { toast } = useToast();
-  const [deletingId, setDeletingId] = useState<number | null>(null);
-  const isMountedRef = useRef(true);
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    isMountedRef.current = true;
-    return () => {
-      isMountedRef.current = false;
-    };
-  }, []);
+  const deleteMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const url = buildUrl(api.resumes.delete.path, { id });
+      const res = await authedFetch(url, {
+        method: api.resumes.delete.method,
+      });
+
+      if (!res.ok) {
+        if (res.status === 404) {
+          throw new Error(i18n.t("errors.resume_not_found") || "Resume not found");
+        }
+        throw new Error(i18n.t("errors.delete_resume_failed") || "Failed to delete resume");
+      }
+
+      return true;
+    },
+    onSuccess: () => {
+      toast({
+        title: i18n.t("toast.cv_deleted_title") || "Resume Deleted",
+        description: i18n.t("toast.cv_deleted_desc") || "Your generated CV has been removed.",
+      });
+      void queryClient.invalidateQueries({ queryKey: RESUMES_QUERY_KEY });
+    },
+    onError: (error) => {
+      toast({
+        title: i18n.t("toast.delete_failed_title") || "Deletion Failed",
+        description:
+          error instanceof Error
+            ? error.message
+            : i18n.t("errors.delete_resume_failed") || "Failed to delete resume",
+        variant: "destructive",
+      });
+    },
+  });
 
   const deleteResume = useCallback(
     async (id: number) => {
-      setDeletingId(id);
       try {
-        const url = buildUrl(api.resumes.delete.path, { id });
-        const res = await authedFetch(url, {
-          method: api.resumes.delete.method,
-        });
-
-        if (!res.ok) {
-          if (res.status === 404) {
-            throw new Error(i18n.t("errors.resume_not_found") || "Resume not found");
-          }
-          throw new Error(i18n.t("errors.delete_resume_failed") || "Failed to delete resume");
-        }
-
-        toast({
-          title: i18n.t("toast.cv_deleted_title") || "Resume Deleted",
-          description: i18n.t("toast.cv_deleted_desc") || "Your generated CV has been removed.",
-        });
+        await deleteMutation.mutateAsync(id);
         return true;
-      } catch (error) {
-        toast({
-          title: i18n.t("toast.delete_failed_title") || "Deletion Failed",
-          description: error instanceof Error ? error.message : (i18n.t("errors.delete_resume_failed") || "Failed to delete resume"),
-          variant: "destructive",
-        });
+      } catch {
         return false;
-      } finally {
-        if (isMountedRef.current) {
-          setDeletingId(null);
-        }
       }
     },
-    [toast]
+    [deleteMutation]
   );
 
   return {
     deleteResume,
-    deletingId,
+    deletingId: (deleteMutation.isPending ? deleteMutation.variables : null) ?? null,
   };
 }

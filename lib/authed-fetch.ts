@@ -31,7 +31,14 @@ export async function authedFetch(url: string, options?: RequestInit): Promise<R
     fetch(url, {
       ...options,
       cache: options?.cache ?? (isReadRequest ? "no-store" : undefined),
-      headers: withAuthHeader(options?.headers, accessToken),
+      headers: (() => {
+        const prepared = withAuthHeader(options?.headers, accessToken);
+        if (isReadRequest) {
+          prepared.set("Cache-Control", "no-cache");
+          prepared.set("Pragma", "no-cache");
+        }
+        return prepared;
+      })(),
     });
 
   let response = await makeRequest(token);

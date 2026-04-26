@@ -64,3 +64,4 @@ Adapters:
 - Reduced unnecessary UI refresh churn by running resume-list polling only when `watchProcessing=true` and active jobs exist.
 - Added resume-list auto-retry polling on transient fetch errors so cards recover without manual logout/login.
 - Hardened authenticated client fetches with automatic Supabase session refresh and one-time retry on `401`.
+- Migrated `useMyResumes` to TanStack Query with periodic refetch + explicit invalidation to avoid stale local hook state.
