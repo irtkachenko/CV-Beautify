@@ -60,3 +60,5 @@ Adapters:
 - Reduced `lib/cv-jobs.ts` responsibilities by extracting Groq fallback/completion and CV HTML helpers into `lib/services/`.
 - Removed duplicate CV delete endpoint shape and kept the canonical `DELETE /api/resumes/:id` contract.
 - Simplified resume list rendering to server-driven fetches on page load plus lightweight refresh while any CV remains in `processing`.
+- Prevented infinite generation polling loops by treating `404/401/403` job-status responses as terminal client states.
+- Reduced unnecessary UI refresh churn by running resume-list polling only when `watchProcessing=true` and active jobs exist.

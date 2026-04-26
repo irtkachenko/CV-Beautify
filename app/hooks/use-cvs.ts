@@ -33,6 +33,7 @@ export function useMyResumes(options: UseMyResumesOptions = {}) {
   const [error, setError] = useState<Error | null>(null);
   const [refreshTick, setRefreshTick] = useState(0);
   const isMountedRef = useRef(true);
+  const hasLoadedOnceRef = useRef(false);
 
   const refresh = useCallback(() => {
     setRefreshTick((tick) => tick + 1);
@@ -57,23 +58,28 @@ export function useMyResumes(options: UseMyResumesOptions = {}) {
     }
 
     let cancelled = false;
+    const isBackgroundRefresh = hasLoadedOnceRef.current;
 
     const load = async () => {
       try {
-        setIsLoading(true);
+        if (!isBackgroundRefresh) {
+          setIsLoading(true);
+        }
         setError(null);
-        // Always fetch fresh data - no caching
         const next = await fetchResumesList();
         if (!cancelled && isMountedRef.current) {
           setData(next);
+          hasLoadedOnceRef.current = true;
         }
       } catch (nextError) {
         if (!cancelled && isMountedRef.current) {
           setError(nextError instanceof Error ? nextError : new Error("Failed to fetch resumes"));
-          setData(null);
+          if (!hasLoadedOnceRef.current) {
+            setData(null);
+          }
         }
       } finally {
-        if (!cancelled && isMountedRef.current) {
+        if (!cancelled && isMountedRef.current && !isBackgroundRefresh) {
           setIsLoading(false);
         }
       }
@@ -87,11 +93,10 @@ export function useMyResumes(options: UseMyResumesOptions = {}) {
   }, [enabled, refreshTick]);
 
   useEffect(() => {
-    if (!enabled) {
+    if (!enabled || !watchProcessing || !hasProcessing) {
       return;
     }
 
-    // Always refresh data every 3 seconds to ensure real-time updates
     const intervalId = window.setInterval(() => {
       setRefreshTick((tick) => tick + 1);
     }, 3000);
@@ -99,7 +104,7 @@ export function useMyResumes(options: UseMyResumesOptions = {}) {
     return () => {
       window.clearInterval(intervalId);
     };
-  }, [enabled]);
+  }, [enabled, hasProcessing, watchProcessing]);
 
   useEffect(() => {
     if (!enabled) {

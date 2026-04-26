@@ -67,6 +67,19 @@ export function usePollingJob(jobId: number, initialStatus: string) {
         const url = buildUrl(api.generate.status.path, { jobId });
         const res = await authedFetch(url);
         if (!res.ok) {
+          if (res.status === 404 || res.status === 401 || res.status === 403) {
+            currentStatus = "failed";
+            setData({
+              id: jobId,
+              status: "failed",
+              errorMessage:
+                res.status === 404
+                  ? "CV generation was removed or no longer exists."
+                  : "You no longer have access to this CV generation.",
+            });
+            setError(null);
+            return;
+          }
           throw new Error(i18n.t("errors.fetch_job_status_failed"));
         }
 
