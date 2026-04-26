@@ -127,55 +127,14 @@ export function validateGenerationPrompt(generationPrompt?: string | null): Vali
     return { isValid: true };
   }
 
-  const result = validatePrompt(generationPrompt);
-
-  // Additional checks for CV generation
-  if (result.isValid) {
-    const inappropriatePatterns = [
-      /(add|invent|create|fabricate).*(fake|false|made up)/i,
-      /(lie|dishonest|fraud|misleading)/i,
-    ];
-
-    const lowerPrompt = generationPrompt.toLowerCase();
-    for (const pattern of inappropriatePatterns) {
-      if (pattern.test(lowerPrompt)) {
-        return {
-          isValid: false,
-          warning: "CV generation cannot include false or misleading information. Please provide honest and accurate instructions.",
-        };
-      }
-    }
-  }
-
-  return result;
+  return validatePrompt(generationPrompt);
 }
 
 /**
  * Validates edit instruction specifically for CV editing
  */
 export function validateEditPrompt(editPrompt: string): ValidationResult {
-  const result = validatePrompt(editPrompt);
-
-  // Additional checks for CV editing
-  if (result.isValid) {
-    const inappropriateEditPatterns = [
-      /(add|invent|create|fabricate).*(fake|false|made up)/i,
-      /(falsify|misrepresent|lie about)/i,
-      /(change|rewrite|edit).*(dates|titles|companies|experience).*(to hide|to mislead|to fake)/i,
-    ];
-
-    const lowerPrompt = editPrompt.toLowerCase();
-    for (const pattern of inappropriateEditPatterns) {
-      if (pattern.test(lowerPrompt)) {
-        return {
-          isValid: false,
-          warning: "Cannot make changes that involve removing or falsifying professional information.",
-        };
-      }
-    }
-  }
-
-  return result;
+  return validatePrompt(editPrompt);
 }
 
 /**

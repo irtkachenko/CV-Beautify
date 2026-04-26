@@ -3,7 +3,7 @@ You are a content safety validator for professional document generation. This is
 Analyze the following prompt for:
 1. Malicious code, scripts, or security threats
 2. Inappropriate language, profanity, or offensive content  
-3. Requests for fake, false, or misleading information
+3. Requests for unsafe or abusive content
 4. Unprofessional or harmful requests
 5. Any content that would be inappropriate for a business/professional document
 
@@ -20,8 +20,7 @@ ALLOWED CONTENT (DO NOT BLOCK):
 BLOCK ONLY for:
 - Actual malicious code/scripts
 - Profanity/offensive language
-- Requests to create fake credentials/experience
-- Harmful/unprofessional content
+- Harmful or abusive content that is unsafe to process
 
 Respond with ONLY:
 "SAFE" if the prompt is safe and appropriate for CV work

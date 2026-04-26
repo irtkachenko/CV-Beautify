@@ -41,6 +41,7 @@ Adapters:
 - CV generation and AI edit preserve the base template by default, but explicit user requests for style or structure changes take priority.
 - User input is normalized into a directive block before prompt assembly so layout/style requests are not buried inside generic instructions.
 - Supported instruction types include targeted typography, color, spacing, section reorder, and removing a specific section/block when requested.
+- Prompt validation failures should stop the request early and surface in UI feedback without mutating generated CV job state.
 
 ## Recent reliability fixes (2026-04-12)
 

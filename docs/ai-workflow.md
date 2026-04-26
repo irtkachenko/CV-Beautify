@@ -24,6 +24,7 @@ Editor-specific adapters:
 - Prompt assembly is handled in `lib/cv-prompt-builder.ts`.
 - Safety and factual rules stay strict.
 - Layout and styling preservation is the default only when the user gives no explicit visual/structural direction.
+- Prompt validation failures should be surfaced as request errors/toasts before a generation or edit job is created or moved into processing.
 - Explicit user requests should be honored when safe, including:
   - changing font sizes
   - changing colors of a specific section

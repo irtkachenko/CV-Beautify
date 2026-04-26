@@ -5,7 +5,6 @@ import Groq from "groq-sdk";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getModelChain } from "./groq-models";
 import { buildEditPromptMessages, buildGenerationPromptMessages } from "./cv-prompt-builder";
-import { comprehensivePromptValidation } from "./prompt-validation";
 
 type TemplateRow = {
   id: number;
@@ -185,16 +184,10 @@ async function generateHtmlWithGroq({
   docText: string;
   generationPrompt?: string | null;
 }) {
-  // Validate the generation prompt with comprehensive AI + regex validation
-  const validation = await comprehensivePromptValidation(generationPrompt || "", 'generation');
-  if (!validation.isValid) {
-    throw new Error(validation.warning || "Invalid prompt content");
-  }
-
   const messages = await buildGenerationPromptMessages({
     templateHtml,
     docText,
-    generationPrompt: validation.cleanedPrompt || generationPrompt || "",
+    generationPrompt: generationPrompt || "",
   });
 
   const result = await runGroqCompletionWithFallback({
@@ -220,15 +213,9 @@ async function editHtmlWithGroq({
   prompt: string;
   originalDocText?: string | null;
 }) {
-  // Validate the edit prompt with comprehensive AI + regex validation
-  const validation = await comprehensivePromptValidation(prompt, 'edit');
-  if (!validation.isValid) {
-    throw new Error(validation.warning || "Invalid prompt content");
-  }
-
   const messages = await buildEditPromptMessages({
     currentHtml,
-    prompt: validation.cleanedPrompt || prompt,
+    prompt,
     originalDocText,
   });
 

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { authenticateRequest } from "@lib/server-auth";
 import { runAiEditJob } from "@lib/cv-jobs";
+import { comprehensivePromptValidation } from "@lib/prompt-validation";
 
 export const dynamic = "force-dynamic";
 
@@ -52,6 +53,10 @@ export async function POST(
     }
 
     const trimmedPrompt = prompt.trim();
+    const promptValidation = await comprehensivePromptValidation(trimmedPrompt, "edit");
+    if (!promptValidation.isValid) {
+      return NextResponse.json({ message: promptValidation.warning || "Prompt validation failed" }, { status: 400 });
+    }
 
     const { error: markProcessingError } = await supabase
       .from("generated_cvs")
@@ -71,7 +76,7 @@ export async function POST(
       supabase,
       cvId,
       cv,
-      prompt: trimmedPrompt,
+      prompt: promptValidation.cleanedPrompt || trimmedPrompt,
       useOriginalDocumentContext: Boolean(useOriginalDocumentContext),
     });
 

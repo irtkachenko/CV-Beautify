@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { authenticateRequest } from "@lib/server-auth";
 import { runGenerateCvJob } from "@lib/cv-jobs";
+import { comprehensivePromptValidation } from "@lib/prompt-validation";
 
 export const dynamic = "force-dynamic";
 
@@ -59,6 +60,11 @@ export async function POST(request: NextRequest) {
       }, { status: 429 });
     }
 
+    const promptValidation = await comprehensivePromptValidation(generationPrompt || "", "generation");
+    if (!promptValidation.isValid) {
+      return NextResponse.json({ message: promptValidation.warning || "Prompt validation failed" }, { status: 400 });
+    }
+
     const fileBuffer = Buffer.from(await file.arrayBuffer());
 
     // Create CV generation record
@@ -92,7 +98,7 @@ export async function POST(request: NextRequest) {
       cvId: newCv.id,
       fileBuffer,
       template,
-      generationPrompt,
+      generationPrompt: promptValidation.cleanedPrompt || generationPrompt,
     }).catch((error) => {
       console.error(`[generate:${newCv.id}] Unhandled error in runGenerateCvJob:`, error);
       // Update status to failed if job crashes
