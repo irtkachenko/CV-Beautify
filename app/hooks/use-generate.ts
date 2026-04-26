@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { api, buildUrl } from "@shared/routes";
+import type { ResumesListResponse } from "@shared/routes";
 import i18n from "@lib/i18n";
 import { parseWithLogging } from "@lib/validation";
 import { authedFetch } from "@lib/authed-fetch";
@@ -45,7 +46,34 @@ export function useGenerateCv() {
     },
     retry: 1, // Retry once for generation failures
     retryDelay: 2000, // Wait 2 seconds before retry
-    onSuccess: () => {
+    onSuccess: (response) => {
+      queryClient.setQueryData<ResumesListResponse | undefined>(
+        [api.resumes.list.path],
+        (current) => {
+          if (!current) {
+            return {
+              cvs: [response.cv],
+              count: 1,
+              limit: 5,
+              canCreateMore: true,
+            };
+          }
+
+          const alreadyExists = current.cvs.some((cv) => cv.id === response.cv.id);
+          if (alreadyExists) {
+            return current;
+          }
+
+          const nextCvs = [response.cv, ...current.cvs];
+          return {
+            ...current,
+            cvs: nextCvs,
+            count: nextCvs.length,
+            canCreateMore: nextCvs.length < current.limit,
+          };
+        }
+      );
+
       queryClient.invalidateQueries({ queryKey: [api.resumes.list.path] });
 
       // Kick an eager refresh without blanking the cached list during route navigation.

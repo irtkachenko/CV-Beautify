@@ -63,7 +63,10 @@ export const api = {
         temperature: z.number().min(0).max(2).optional(),
       }),
       responses: {
-        202: z.object({ jobId: z.number() }),
+        202: z.object({
+          jobId: z.number(),
+          cv: z.custom<GeneratedCvResponse>(),
+        }),
         400: errorSchemas.validation,
         429: errorSchemas.validation,
         401: errorSchemas.unauthorized,

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { authenticateRequest } from "@lib/server-auth";
 import { runGenerateCvJob } from "@lib/cv-jobs";
+import { mapGeneratedCvRow } from "@lib/cv-mappers";
 import { comprehensivePromptValidation } from "@lib/prompt-validation";
 import {
   countGeneratedCvsForUser,
@@ -116,7 +117,12 @@ export async function POST(request: NextRequest) {
         });
     });
 
-    return NextResponse.json({ jobId: newCv.id }, { status: 202 });
+    const createdCv = mapGeneratedCvRow({
+      ...newCv,
+      cv_templates: template,
+    });
+
+    return NextResponse.json({ jobId: newCv.id, cv: createdCv }, { status: 202 });
   } catch (error) {
     console.error("Generate start error:", error);
     return NextResponse.json({ message: "Internal server error" }, { status: 500 });
