@@ -62,6 +62,7 @@ export function useMyResumes(options: UseMyResumesOptions = {}) {
       try {
         setIsLoading(true);
         setError(null);
+        // Always fetch fresh data - no caching
         const next = await fetchResumesList();
         if (!cancelled && isMountedRef.current) {
           setData(next);
@@ -86,18 +87,19 @@ export function useMyResumes(options: UseMyResumesOptions = {}) {
   }, [enabled, refreshTick]);
 
   useEffect(() => {
-    if (!enabled || !watchProcessing || !hasProcessing) {
+    if (!enabled) {
       return;
     }
 
+    // Always refresh data every 3 seconds to ensure real-time updates
     const intervalId = window.setInterval(() => {
       setRefreshTick((tick) => tick + 1);
-    }, 2000);
+    }, 3000);
 
     return () => {
       window.clearInterval(intervalId);
     };
-  }, [enabled, watchProcessing, hasProcessing]);
+  }, [enabled]);
 
   useEffect(() => {
     if (!enabled) {

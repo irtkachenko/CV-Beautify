@@ -58,7 +58,13 @@ export async function GET(request: NextRequest) {
       canCreateMore: mappedCvs.length < GENERATED_CV_LIMIT
     };
     
-    return NextResponse.json(response);
+    return NextResponse.json(response, {
+      headers: {
+        "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+        "Pragma": "no-cache",
+        "Expires": "0",
+      },
+    });
   } catch (error) {
     console.error("Resumes route error:", error);
     return NextResponse.json({ message: "Internal server error" }, { status: 500 });

@@ -81,7 +81,7 @@ export function usePollingJob(jobId: number, initialStatus: string) {
         currentStatus = next.status;
 
         if (currentStatus === "pending" || currentStatus === "processing") {
-          timeoutId = window.setTimeout(fetchStatus, 2000);
+          timeoutId = window.setTimeout(fetchStatus, 1500);
         }
       } catch (nextError) {
         if (cancelled) {

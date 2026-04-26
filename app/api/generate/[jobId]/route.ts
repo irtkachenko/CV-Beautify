@@ -54,7 +54,13 @@ export async function GET(
       template: mappedCv.template || undefined,
     };
 
-    return NextResponse.json(statusResponse);
+    return NextResponse.json(statusResponse, {
+      headers: {
+        "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+        "Pragma": "no-cache",
+        "Expires": "0",
+      },
+    });
   } catch (error) {
     console.error("Generate status error:", error);
     return NextResponse.json({ message: "Internal server error" }, { status: 500 });
