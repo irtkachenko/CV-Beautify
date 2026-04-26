@@ -10,18 +10,16 @@ type UseMyResumesOptions = {
   enabled?: boolean;
 };
 
-const getResumesQueryKey = () => [api.resumes.list.path, Date.now()] as const;
+const RESUMES_QUERY_KEY = [api.resumes.list.path] as const;
 
 export function useMyResumes(options: UseMyResumesOptions = {}) {
   const { enabled = true } = options;
   const queryClient = useQueryClient();
 
-  const queryKey = getResumesQueryKey();
-  
   const query = useQuery({
-    queryKey,
+    queryKey: RESUMES_QUERY_KEY,
     enabled,
-    staleTime: 0, // Always stale to force refetch
+    staleTime: 1000,
     refetchOnMount: "always",
     refetchOnWindowFocus: true,
     refetchOnReconnect: true,
@@ -41,7 +39,7 @@ export function useMyResumes(options: UseMyResumesOptions = {}) {
   });
 
   const refresh = useCallback(() => {
-    void queryClient.invalidateQueries({ queryKey: getResumesQueryKey() });
+    void queryClient.invalidateQueries({ queryKey: RESUMES_QUERY_KEY });
   }, [queryClient]);
 
   return {
@@ -72,7 +70,7 @@ export function useDeleteResume() {
       return true;
     },
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: getResumesQueryKey() });
+      void queryClient.invalidateQueries({ queryKey: RESUMES_QUERY_KEY });
       toast({
         title: i18n.t("toast.cv_deleted_title") || "Resume Deleted",
         description: i18n.t("toast.cv_deleted_desc") || "Your generated CV has been removed.",
