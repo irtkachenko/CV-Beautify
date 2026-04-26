@@ -1,7 +1,5 @@
 import { useState, useRef } from "react";
 import type React from "react";
-import { usePollingJob } from "@/hooks/use-generate";
-import { useDeleteResume } from "@/hooks/use-cvs";
 import { FileText, Loader2, CheckCircle2, AlertCircle, Calendar, Eye, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import Link from "next/link";
@@ -12,19 +10,16 @@ import { useCvIframePreview } from "@/hooks/use-cv-iframe-preview";
 import { SmartImage } from "@/components/ui/smart-image";
 import { SecureCvIframe } from "./SecureCvIframe";
 
-export function CvStatusCard({ cv }: { cv: GeneratedCvResponse }) {
-  const { t } = useTranslation();
-  // Poll if status is pending/processing
-  const { data: polledJob } = usePollingJob(cv.id, cv.status);
+interface CvStatusCardProps {
+  cv: GeneratedCvResponse;
+  onDelete?: (id: number) => Promise<boolean>;
+  isDeleting?: boolean;
+}
 
-  // Use polled data for pending/processing, but trust props for terminal states.
-  // This prevents stale polling cache from keeping a card stuck in processing forever.
+export function CvStatusCard({ cv, onDelete, isDeleting = false }: CvStatusCardProps) {
+  const { t } = useTranslation();
   const displayData: GeneratedCvResponse = cv;
-  const polledStatus = polledJob?.status;
-  const currentStatus =
-    (cv.status === "pending" || cv.status === "processing") && polledStatus
-      ? polledStatus
-      : cv.status;
+  const currentStatus = cv.status;
 
   const isProcessing = currentStatus === "pending" || currentStatus === "processing";
   const isFailed = currentStatus === "failed";
@@ -33,12 +28,13 @@ export function CvStatusCard({ cv }: { cv: GeneratedCvResponse }) {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Use the centralized delete hook instead of manual implementation
-  const { mutate: deleteCv, isPending: isDeleting } = useDeleteResume();
-
   const handleDelete = () => {
-    deleteCv(cv.id, {
-      onSuccess: () => {
+    if (!onDelete) {
+      return;
+    }
+
+    void onDelete(cv.id).then((deleted) => {
+      if (deleted) {
         setIsDeleteDialogOpen(false);
       }
     });
@@ -100,7 +96,7 @@ export function CvStatusCard({ cv }: { cv: GeneratedCvResponse }) {
         <div className="glass-card rounded-2xl overflow-hidden group relative flex flex-col cursor-pointer hover:shadow-xl transition-all duration-300">
           {/* Delete Button */}
           <button
-            disabled={isDeleting}
+            disabled={!onDelete || isDeleting}
             className="absolute top-3 left-3 p-2 bg-destructive hover:bg-destructive/90 text-white rounded-full shadow-lg transition-all duration-200 hover:scale-110 hover:shadow-xl z-10 disabled:opacity-50 disabled:cursor-not-allowed"
             title={t("cv_card.delete_btn")}
             onClick={(e) => {

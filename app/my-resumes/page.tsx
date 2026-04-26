@@ -2,7 +2,7 @@
 
 import React from "react";
 import { useRouter } from "next/navigation";
-import { useMyResumes } from "@/hooks/use-cvs";
+import { useDeleteResume, useMyResumes } from "@/hooks/use-cvs";
 import { Navbar } from "@/components/layout/Navbar";
 import { CvStatusCard } from "@/components/CvStatusCard";
 import { motion } from "framer-motion";
@@ -15,7 +15,11 @@ export default function MyResumesPage() {
   const router = useRouter();
   const { t } = useTranslation();
   const { user, isLoading: isAuthLoading } = useAuth();
-  const { data: resumesData, isLoading, error } = useMyResumes();
+  const { data: resumesData, isLoading, error, refresh } = useMyResumes({
+    enabled: !!user,
+    watchProcessing: true,
+  });
+  const { deleteResume, deletingId } = useDeleteResume();
 
   // Scroll to top on mount to ensure user sees the latest CVs (newest at top)
   React.useEffect(() => {
@@ -102,7 +106,18 @@ export default function MyResumesPage() {
             className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8"
           >
             {resumesData.cvs.map((resume) => (
-              <CvStatusCard key={resume.id} cv={resume} />
+              <CvStatusCard
+                key={resume.id}
+                cv={resume}
+                isDeleting={deletingId === resume.id}
+                onDelete={async (id) => {
+                  const deleted = await deleteResume(id);
+                  if (deleted) {
+                    refresh();
+                  }
+                  return deleted;
+                }}
+              />
             ))}
           </motion.div>
         )}

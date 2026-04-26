@@ -15,4 +15,4 @@ Architecture conventions:
 - Protected API routes use centralized auth via `lib/server-auth.ts`.
 - Generated CV ownership/limit checks are shared via `lib/services/generated-cv-service.ts`.
 - Canonical CV deletion contract is `DELETE /api/resumes/:id`.
-- Resume list UI state uses a single canonical `ResumesListResponse` cache updated through `lib/resume-list-store.ts`.
+- Resume list UI state is driven by direct authenticated fetches, with lightweight refresh while any CV is still processing.

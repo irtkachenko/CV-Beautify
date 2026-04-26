@@ -93,7 +93,7 @@ export default function GalleryPage() {
                   <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-center justify-center z-10">
                     <button
                       onClick={() => handleTemplateClick(template)}
-                      disabled={resumesData && !resumesData.canCreateMore}
+                      disabled={Boolean(resumesData && !resumesData.canCreateMore)}
                       className={`flex items-center gap-2 px-6 py-3 rounded-full font-bold text-white shadow-lg transition-all transform translate-y-4 group-hover:translate-y-0 ${
                         resumesData && !resumesData.canCreateMore
                           ? 'bg-gray-500 cursor-not-allowed'
