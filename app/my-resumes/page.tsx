@@ -79,7 +79,7 @@ export default function MyResumesPage() {
             <p className="font-bold text-lg">{t("my_resumes.error")}</p>
             <p className="text-sm mt-2">{t("my_resumes.error_desc")}</p>
           </div>
-        ) : !resumesData || !resumesData.cvs || resumesData.cvs.length === 0 ? (
+        ) : !resumesData || !Array.isArray(resumesData.cvs) || resumesData.cvs.length === 0 ? (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}

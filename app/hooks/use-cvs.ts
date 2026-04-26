@@ -60,9 +60,7 @@ export function useMyResumes(options: UseMyResumesOptions = {}) {
 
     const load = async () => {
       try {
-        if (!data) {
-          setIsLoading(true);
-        }
+        setIsLoading(true);
         setError(null);
         const next = await fetchResumesList();
         if (!cancelled && isMountedRef.current) {
@@ -71,6 +69,7 @@ export function useMyResumes(options: UseMyResumesOptions = {}) {
       } catch (nextError) {
         if (!cancelled && isMountedRef.current) {
           setError(nextError instanceof Error ? nextError : new Error("Failed to fetch resumes"));
+          setData(null);
         }
       } finally {
         if (!cancelled && isMountedRef.current) {
