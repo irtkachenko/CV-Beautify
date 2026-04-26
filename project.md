@@ -65,4 +65,4 @@ Adapters:
 - Added resume-list auto-retry polling on transient fetch errors so cards recover without manual logout/login.
 - Hardened authenticated client fetches with automatic Supabase session refresh and one-time retry on `401`.
 - Migrated `useMyResumes` to TanStack Query with periodic refetch + explicit invalidation to avoid stale local hook state.
-- Added durable `cv_jobs` queue with authenticated worker endpoint (`/api/cv-jobs/run-next`) and moved generate/edit flows from fire-and-forget to queued execution.
+- Added durable `cv_jobs` queue with authenticated worker endpoint (`/api/cv-jobs/run-next`) for unified generation and AI-edit execution.
