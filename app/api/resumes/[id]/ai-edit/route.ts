@@ -47,11 +47,31 @@ export async function POST(
       return NextResponse.json({ message: "Prompt is required" }, { status: 400 });
     }
 
-    void runAiEditJob({
+    if (cv.status === "pending" || cv.status === "processing") {
+      return NextResponse.json({ message: "CV is already being processed" }, { status: 409 });
+    }
+
+    const trimmedPrompt = prompt.trim();
+
+    const { error: markProcessingError } = await supabase
+      .from("generated_cvs")
+      .update({
+        status: "processing",
+        progress: "Editing CV with Groq...",
+        error_message: null,
+      })
+      .eq("id", cvId);
+
+    if (markProcessingError) {
+      console.error(`[ai-edit:${cvId}] Failed to mark CV as processing:`, markProcessingError);
+      return NextResponse.json({ message: "Failed to start AI edit" }, { status: 500 });
+    }
+
+    await runAiEditJob({
       supabase,
       cvId,
       cv,
-      prompt: prompt.trim(),
+      prompt: trimmedPrompt,
       useOriginalDocumentContext: Boolean(useOriginalDocumentContext),
     });
 
