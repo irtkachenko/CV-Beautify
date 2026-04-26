@@ -15,4 +15,5 @@ Architecture conventions:
 - Protected API routes use centralized auth via `lib/server-auth.ts`.
 - Generated CV ownership/limit checks are shared via `lib/services/generated-cv-service.ts`.
 - Canonical CV deletion contract is `DELETE /api/resumes/:id`.
-- Resume list UI state is driven by direct authenticated fetches, with lightweight refresh while any CV is still processing.
+- Resume list UI reads `generated_cvs` directly through Supabase client with RLS.
+- Generation/edit tasks are enqueued in `cv_jobs` and drained through `POST /api/cv-jobs/run-next`.

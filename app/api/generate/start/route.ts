@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
+import mammoth from "mammoth";
 import { authenticateRequest } from "@lib/server-auth";
-import { runGenerateCvJob } from "@lib/cv-jobs";
 import { mapGeneratedCvRow } from "@lib/cv-mappers";
 import { comprehensivePromptValidation } from "@lib/prompt-validation";
 import {
   countGeneratedCvsForUser,
   GENERATED_CV_LIMIT,
 } from "@lib/services/generated-cv-service";
+import { enqueueCvJob } from "@lib/cv-jobs-queue";
 
 export const dynamic = "force-dynamic";
 
@@ -66,6 +67,11 @@ export async function POST(request: NextRequest) {
     }
 
     const fileBuffer = Buffer.from(await file.arrayBuffer());
+    const extracted = await mammoth.extractRawText({ buffer: fileBuffer });
+    const docText = extracted.value?.trim() || "";
+    if (!docText) {
+      return NextResponse.json({ message: "Document text extraction failed or produced empty text" }, { status: 400 });
+    }
 
     // Create CV generation record
     console.log(`[generate:start] Attempting to create CV record for user ${userId}, template ${templateIdNum}`);
@@ -75,11 +81,11 @@ export async function POST(request: NextRequest) {
       .insert({
         user_id: userId,
         template_id: templateIdNum,
-        status: "processing",
+        status: "pending",
         error_message: null,
-        progress: "Extracting document text...",
+        progress: "Queued for generation...",
         name: file.name.replace(/\.docx$/i, ""),
-        original_doc_text: null,
+        original_doc_text: docText,
         original_doc_links: [],
       })
       .select()
@@ -92,30 +98,26 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ message: "Failed to start CV generation" }, { status: 500 });
     }
 
-    // Run the generation job with proper error handling
-    runGenerateCvJob({
-      supabase,
+    const enqueueResult = await enqueueCvJob(supabase, {
+      userId,
       cvId: newCv.id,
-      fileBuffer,
-      template,
-      generationPrompt: promptValidation.cleanedPrompt || generationPrompt,
-    }).catch((error) => {
-      console.error(`[generate:${newCv.id}] Unhandled error in runGenerateCvJob:`, error);
-      // Update status to failed if job crashes
-      supabase
+      jobType: "generate",
+      payload: {
+        generationPrompt: promptValidation.cleanedPrompt || generationPrompt || "",
+      },
+    });
+
+    if (!enqueueResult.ok) {
+      await supabase
         .from("generated_cvs")
         .update({
           status: "failed",
           progress: null,
-          error_message: error instanceof Error ? error.message : "Unknown error occurred during generation",
+          error_message: enqueueResult.message,
         })
-        .eq("id", newCv.id)
-        .then(({ error: updateError }) => {
-          if (updateError) {
-            console.error(`[generate:${newCv.id}] Failed to update status to failed:`, updateError);
-          }
-        });
-    });
+        .eq("id", newCv.id);
+      return NextResponse.json({ message: "Failed to enqueue CV generation" }, { status: 500 });
+    }
 
     const createdCv = mapGeneratedCvRow({
       ...newCv,

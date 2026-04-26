@@ -184,6 +184,73 @@ export async function runGenerateCvJob({
       progress: null,
       error_message: message,
     });
+    throw new Error(message);
+  }
+}
+
+export async function runGenerateCvJobFromText({
+  supabase,
+  cvId,
+  template,
+  docText,
+  generationPrompt,
+}: {
+  supabase: SupabaseClient;
+  cvId: number;
+  template: TemplateRow;
+  docText: string;
+  generationPrompt?: string | null;
+}) {
+  try {
+    console.info(`[generate:${cvId}] Text job started`);
+    const normalizedDocText = normalizeCommonMojibake((docText || "").trim());
+    if (!normalizedDocText) {
+      throw new Error("Document text is empty");
+    }
+
+    await setProgress(supabase, cvId, {
+      status: "processing",
+      progress: "Loading template...",
+      error_message: null,
+      original_doc_text: normalizedDocText,
+      original_doc_links: [],
+    });
+
+    const templateHtml = await resolveTemplateHtml(template.file_name);
+
+    await setProgress(supabase, cvId, {
+      status: "processing",
+      progress: "Generating CV with Groq...",
+    });
+
+    const generatedHtml = await generateHtmlWithGroq({
+      templateHtml,
+      docText: normalizedDocText,
+      generationPrompt,
+    });
+
+    const html = ensureTemplateStyles(generatedHtml, templateHtml);
+    if (!html || html.length < 200) {
+      throw new Error("Groq returned empty or invalid HTML output");
+    }
+
+    await setProgress(supabase, cvId, {
+      status: "complete",
+      progress: null,
+      error_message: null,
+      html_content: html,
+      pdf_url: `/api/generated-cv/${cvId}/render`,
+    });
+    console.info(`[generate:${cvId}] Text job completed`);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown generation error";
+    console.error(`[generate:${cvId}] Text job failed:`, message);
+    await setProgress(supabase, cvId, {
+      status: "failed",
+      progress: null,
+      error_message: message,
+    });
+    throw new Error(message);
   }
 }
 
@@ -244,5 +311,6 @@ export async function runAiEditJob({
       progress: null,
       error_message: message,
     });
+    throw new Error(message);
   }
 }

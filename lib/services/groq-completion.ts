@@ -2,6 +2,25 @@ import Groq from "groq-sdk";
 import { getModelChain } from "@lib/groq-models";
 
 let cachedModelChain: string[] | null = null;
+const DEFAULT_GROQ_TIMEOUT_MS = 120_000;
+
+function withTimeout<T>(promise: Promise<T>, timeoutMs: number, model: string): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const timeoutId = setTimeout(() => {
+      reject(new Error(`Groq request timed out after ${timeoutMs}ms for model '${model}'`));
+    }, timeoutMs);
+
+    promise
+      .then((value) => {
+        clearTimeout(timeoutId);
+        resolve(value);
+      })
+      .catch((error) => {
+        clearTimeout(timeoutId);
+        reject(error);
+      });
+  });
+}
 
 function extractErrorMessage(error: unknown): string {
   if (typeof error === "string") return error;
@@ -76,6 +95,7 @@ export async function runGroqCompletionWithFallback({
 }) {
   const groq = getGroqClient();
   const modelChain = await getGroqModelChain();
+  const timeoutMs = Number(process.env.GROQ_TIMEOUT_MS || DEFAULT_GROQ_TIMEOUT_MS);
   let lastError: unknown;
   const attemptedModels: string[] = [];
   const permanentFailures: string[] = [];
@@ -85,12 +105,16 @@ export async function runGroqCompletionWithFallback({
   for (const model of modelChain) {
     attemptedModels.push(model);
     try {
-      const completion = await groq.chat.completions.create({
-        model,
-        temperature,
-        max_tokens: maxTokens,
-        messages,
-      });
+      const completion = await withTimeout(
+        groq.chat.completions.create({
+          model,
+          temperature,
+          max_tokens: maxTokens,
+          messages,
+        }),
+        timeoutMs,
+        model
+      );
 
       const result = completion.choices[0]?.message?.content?.trim() || "";
       console.info(`[groq] Successfully used model '${model}'`);

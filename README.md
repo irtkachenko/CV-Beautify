@@ -43,7 +43,8 @@ Optional:
 - RLS is enabled on user data tables. If token context is not forwarded, requests will fail even after successful OAuth.
 - Route auth is centralized in `lib/server-auth.ts` (header/cookie token resolution + user validation).
 - Canonical CV deletion endpoint is `DELETE /api/resumes/:id` (no query-param fallback path).
-- Resume lists are rendered from direct authenticated fetches on page entry, with lightweight refresh while any CV is still `pending` or `processing`.
+- Resume list cards are read directly from Supabase client (`generated_cvs` + RLS) with periodic refresh.
+- CV generation/edit requests are queued in `cv_jobs` and processed by the authenticated worker endpoint `POST /api/cv-jobs/run-next`.
 
 ## Useful scripts
 

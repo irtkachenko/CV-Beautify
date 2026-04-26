@@ -36,6 +36,14 @@ Client validates and consumes response using contracts in `shared/routes.ts` and
 
 TanStack Query caches results and invalidates related queries on mutations.
 
+## Generation queue flow
+
+1. `POST /api/generate/start` creates `generated_cvs` row with `pending` status and enqueues `cv_jobs` row.
+2. `POST /api/resumes/:id/ai-edit` enqueues edit job in `cv_jobs` (also `pending`).
+3. `POST /api/cv-jobs/run-next` claims one pending job for current user and processes it.
+4. Worker updates `generated_cvs` to `processing` then terminal `complete`/`failed`.
+5. Client polling (`use-cvs`, `use-generate`) periodically calls `run-next` and refreshes job status.
+
 ## Error handling path
 
 - 401: missing/invalid token

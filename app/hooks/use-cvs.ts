@@ -13,6 +13,7 @@ type UseMyResumesOptions = {
 
 const RESUMES_QUERY_KEY = [api.resumes.list.path] as const;
 const RESUME_LIMIT = 5;
+const STALE_PROCESSING_MS = 15 * 60 * 1000;
 
 export function useMyResumes(options: UseMyResumesOptions = {}) {
   const { enabled = true } = options;
@@ -30,6 +31,8 @@ export function useMyResumes(options: UseMyResumesOptions = {}) {
     networkMode: "always",
     retry: 2,
     queryFn: async () => {
+      await authedFetch("/api/cv-jobs/run-next", { method: "POST" }).catch(() => null);
+
       const {
         data: { user },
       } = await supabase.auth.getUser();
@@ -60,7 +63,26 @@ export function useMyResumes(options: UseMyResumesOptions = {}) {
         throw new Error(error.message || "Failed to fetch resumes");
       }
 
-      const mapped = (data || []).map((row) => mapGeneratedCvRow(row as any));
+      const now = Date.now();
+      const mapped = (data || []).map((row) => {
+        const cv = mapGeneratedCvRow(row as any);
+        const isProcessing = cv.status === "pending" || cv.status === "processing";
+        const updatedAtMs = new Date(cv.updatedAt || cv.createdAt).getTime();
+        const isStale = Number.isFinite(updatedAtMs) && now - updatedAtMs > STALE_PROCESSING_MS;
+
+        if (isProcessing && isStale) {
+          return {
+            ...cv,
+            status: "failed" as const,
+            progress: null,
+            errorMessage:
+              cv.errorMessage ||
+              "Generation timed out. Please retry generation.",
+          };
+        }
+
+        return cv;
+      });
       return {
         cvs: mapped,
         count: mapped.length,

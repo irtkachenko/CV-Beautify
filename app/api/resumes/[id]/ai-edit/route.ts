@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { authenticateRequest } from "@lib/server-auth";
-import { runAiEditJob } from "@lib/cv-jobs";
 import { comprehensivePromptValidation } from "@lib/prompt-validation";
 import { getOwnedGeneratedCv } from "@lib/services/generated-cv-service";
+import { enqueueCvJob } from "@lib/cv-jobs-queue";
 
 export const dynamic = "force-dynamic";
 
@@ -60,8 +60,8 @@ export async function POST(
     const { error: markProcessingError } = await supabase
       .from("generated_cvs")
       .update({
-        status: "processing",
-        progress: "Editing CV with Groq...",
+        status: "pending",
+        progress: "Queued for AI edit...",
         error_message: null,
       })
       .eq("id", cvId);
@@ -71,28 +71,27 @@ export async function POST(
       return NextResponse.json({ message: "Failed to start AI edit" }, { status: 500 });
     }
 
-    runAiEditJob({
-      supabase,
+    const enqueueResult = await enqueueCvJob(supabase, {
+      userId,
       cvId,
-      cv,
-      prompt: promptValidation.cleanedPrompt || trimmedPrompt,
-      useOriginalDocumentContext: Boolean(useOriginalDocumentContext),
-    }).catch((error) => {
-      console.error(`[ai-edit:${cvId}] Unhandled error in runAiEditJob:`, error);
-      supabase
+      jobType: "edit",
+      payload: {
+        prompt: promptValidation.cleanedPrompt || trimmedPrompt,
+        useOriginalDocumentContext: Boolean(useOriginalDocumentContext),
+      },
+    });
+
+    if (!enqueueResult.ok) {
+      await supabase
         .from("generated_cvs")
         .update({
           status: "failed",
           progress: null,
-          error_message: error instanceof Error ? error.message : "Unknown error occurred during AI edit",
+          error_message: enqueueResult.message,
         })
-        .eq("id", cvId)
-        .then(({ error: updateError }) => {
-          if (updateError) {
-            console.error(`[ai-edit:${cvId}] Failed to update status to failed:`, updateError);
-          }
-        });
-    });
+        .eq("id", cvId);
+      return NextResponse.json({ message: "Failed to enqueue AI edit" }, { status: 500 });
+    }
 
     return NextResponse.json({ jobId: cvId }, { status: 202 });
   } catch (error) {
