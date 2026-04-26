@@ -10,21 +10,27 @@ type UseMyResumesOptions = {
   enabled?: boolean;
 };
 
-const RESUMES_QUERY_KEY = [api.resumes.list.path] as const;
+const getResumesQueryKey = () => [api.resumes.list.path, Date.now()] as const;
 
 export function useMyResumes(options: UseMyResumesOptions = {}) {
   const { enabled = true } = options;
   const queryClient = useQueryClient();
 
+  const queryKey = getResumesQueryKey();
+  
   const query = useQuery({
-    queryKey: RESUMES_QUERY_KEY,
+    queryKey,
     enabled,
-    staleTime: 1000,
+    staleTime: 0, // Always stale to force refetch
     refetchOnMount: "always",
     refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
+    refetchInterval: enabled ? 3000 : false,
+    refetchIntervalInBackground: true,
+    networkMode: "always",
     retry: 2,
     queryFn: async () => {
-      const res = await authedFetch(api.resumes.list.path);
+      const res = await authedFetch(`${api.resumes.list.path}?_t=${Date.now()}`);
       if (!res.ok) {
         if (res.status === 401) throw new Error("Unauthorized");
         throw new Error("Failed to fetch resumes");
@@ -35,7 +41,7 @@ export function useMyResumes(options: UseMyResumesOptions = {}) {
   });
 
   const refresh = useCallback(() => {
-    void queryClient.invalidateQueries({ queryKey: RESUMES_QUERY_KEY });
+    void queryClient.invalidateQueries({ queryKey: getResumesQueryKey() });
   }, [queryClient]);
 
   return {
@@ -66,7 +72,7 @@ export function useDeleteResume() {
       return true;
     },
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: RESUMES_QUERY_KEY });
+      void queryClient.invalidateQueries({ queryKey: getResumesQueryKey() });
       toast({
         title: i18n.t("toast.cv_deleted_title") || "Resume Deleted",
         description: i18n.t("toast.cv_deleted_desc") || "Your generated CV has been removed.",
