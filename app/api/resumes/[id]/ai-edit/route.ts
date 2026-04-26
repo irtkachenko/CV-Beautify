@@ -72,12 +72,27 @@ export async function POST(
       return NextResponse.json({ message: "Failed to start AI edit" }, { status: 500 });
     }
 
-    await runAiEditJob({
+    runAiEditJob({
       supabase,
       cvId,
       cv,
       prompt: promptValidation.cleanedPrompt || trimmedPrompt,
       useOriginalDocumentContext: Boolean(useOriginalDocumentContext),
+    }).catch((error) => {
+      console.error(`[ai-edit:${cvId}] Unhandled error in runAiEditJob:`, error);
+      supabase
+        .from("generated_cvs")
+        .update({
+          status: "failed",
+          progress: null,
+          error_message: error instanceof Error ? error.message : "Unknown error occurred during AI edit",
+        })
+        .eq("id", cvId)
+        .then(({ error: updateError }) => {
+          if (updateError) {
+            console.error(`[ai-edit:${cvId}] Failed to update status to failed:`, updateError);
+          }
+        });
     });
 
     return NextResponse.json({ jobId: cvId }, { status: 202 });
