@@ -13,7 +13,7 @@ type UseMyResumesOptions = {
 };
 
 async function fetchResumesList(): Promise<ResumesListResponse> {
-  const res = await authedFetch(api.resumes.list.path);
+  const res = await authedFetch(`${api.resumes.list.path}?_t=${Date.now()}`);
   if (!res.ok) {
     if (res.status === 401) {
       throw new Error("Unauthorized");
@@ -100,14 +100,9 @@ export function useMyResumes(options: UseMyResumesOptions = {}) {
       return;
     }
 
-    const shouldPoll = hasProcessing || Boolean(error) || !hasLoadedOnceRef.current;
-    if (!shouldPoll) {
-      return;
-    }
-
     const intervalId = window.setInterval(() => {
       setRefreshTick((tick) => tick + 1);
-    }, 3000);
+    }, hasProcessing || Boolean(error) || !hasLoadedOnceRef.current ? 3000 : 10000);
 
     return () => {
       window.clearInterval(intervalId);
