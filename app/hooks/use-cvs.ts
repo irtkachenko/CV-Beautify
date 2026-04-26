@@ -54,6 +54,9 @@ export function useMyResumes(options: UseMyResumesOptions = {}) {
   useEffect(() => {
     if (!enabled) {
       setIsLoading(false);
+      setData(null);
+      setError(null);
+      hasLoadedOnceRef.current = false;
       return;
     }
 
@@ -93,7 +96,12 @@ export function useMyResumes(options: UseMyResumesOptions = {}) {
   }, [enabled, refreshTick]);
 
   useEffect(() => {
-    if (!enabled || !watchProcessing || !hasProcessing) {
+    if (!enabled || !watchProcessing) {
+      return;
+    }
+
+    const shouldPoll = hasProcessing || Boolean(error) || !hasLoadedOnceRef.current;
+    if (!shouldPoll) {
       return;
     }
 
@@ -104,7 +112,7 @@ export function useMyResumes(options: UseMyResumesOptions = {}) {
     return () => {
       window.clearInterval(intervalId);
     };
-  }, [enabled, hasProcessing, watchProcessing]);
+  }, [enabled, error, hasProcessing, watchProcessing]);
 
   useEffect(() => {
     if (!enabled) {

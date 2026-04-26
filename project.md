@@ -62,3 +62,4 @@ Adapters:
 - Simplified resume list rendering to server-driven fetches on page load plus lightweight refresh while any CV remains in `processing`.
 - Prevented infinite generation polling loops by treating `404/401/403` job-status responses as terminal client states.
 - Reduced unnecessary UI refresh churn by running resume-list polling only when `watchProcessing=true` and active jobs exist.
+- Added resume-list auto-retry polling on transient fetch errors so cards recover without manual logout/login.
