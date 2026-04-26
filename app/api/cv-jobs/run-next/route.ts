@@ -122,6 +122,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ processed: true, jobId: job.id, cvId: job.cv_id });
     } catch (error) {
       const message = error instanceof Error ? error.message : "Unknown worker error";
+      await supabase
+        .from("generated_cvs")
+        .update({
+          status: "failed",
+          progress: null,
+          error_message: message,
+        })
+        .eq("id", job.cv_id);
       await failCvJob(supabase, job.id, message);
       return NextResponse.json({ processed: false, message, jobId: job.id, cvId: job.cv_id }, { status: 500 });
     }
