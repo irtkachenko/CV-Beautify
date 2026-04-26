@@ -3,14 +3,16 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, buildUrl } from "@shared/routes";
 import { useToast } from "@/hooks/use-toast";
 import i18n from "@lib/i18n";
-import { parseWithLogging } from "@lib/validation";
 import { authedFetch } from "@lib/authed-fetch";
+import { supabase } from "@lib/supabase";
+import { mapGeneratedCvRow } from "@lib/cv-mappers";
 
 type UseMyResumesOptions = {
   enabled?: boolean;
 };
 
 const RESUMES_QUERY_KEY = [api.resumes.list.path] as const;
+const RESUME_LIMIT = 5;
 
 export function useMyResumes(options: UseMyResumesOptions = {}) {
   const { enabled = true } = options;
@@ -28,13 +30,43 @@ export function useMyResumes(options: UseMyResumesOptions = {}) {
     networkMode: "always",
     retry: 2,
     queryFn: async () => {
-      const res = await authedFetch(`${api.resumes.list.path}?_t=${Date.now()}`);
-      if (!res.ok) {
-        if (res.status === 401) throw new Error("Unauthorized");
-        throw new Error("Failed to fetch resumes");
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) {
+        throw new Error("Unauthorized");
       }
-      const data = await res.json();
-      return parseWithLogging(api.resumes.list.responses[200], data, "resumes.list");
+
+      const { data, error } = await supabase
+        .from("generated_cvs")
+        .select(
+          `
+            *,
+            cv_templates (
+              id,
+              name,
+              file_name,
+              screenshot_url,
+              description,
+              created_at
+            )
+          `
+        )
+        .eq("user_id", user.id)
+        .order("updated_at", { ascending: false });
+
+      if (error) {
+        throw new Error(error.message || "Failed to fetch resumes");
+      }
+
+      const mapped = (data || []).map((row) => mapGeneratedCvRow(row as any));
+      return {
+        cvs: mapped,
+        count: mapped.length,
+        limit: RESUME_LIMIT,
+        canCreateMore: mapped.length < RESUME_LIMIT,
+      };
     },
   });
 
