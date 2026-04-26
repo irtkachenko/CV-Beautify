@@ -35,6 +35,12 @@ Adapters:
 - `.windsurf/rules.md`
 - `.github/copilot-instructions.md`
 
+## AI prompt behavior
+
+- Runtime prompt templates are stored in `prompts/`.
+- CV generation and AI edit should preserve the base template by default, but explicit user requests for style or structure changes take priority.
+- Supported instruction types include targeted typography, color, spacing, section reorder, and removing a specific section/block when requested.
+
 ## Recent reliability fixes (2026-04-12)
 
 - Fixed tab navigation routes so authenticated users stay on `/gallery` and are not bounced through `/`.

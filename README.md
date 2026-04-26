@@ -56,3 +56,9 @@ Optional:
 - [docs/auth-troubleshooting.md](docs/auth-troubleshooting.md)
 - [docs/request-processing-flow.md](docs/request-processing-flow.md)
 - [docs/ai-workflow.md](docs/ai-workflow.md)
+
+## AI prompt behavior
+
+- Prompt templates for CV generation/editing live in `prompts/`.
+- Explicit user requests for styling and structure should be honored when safe, including changes like font size, colors, spacing, section order, and removing a specific block.
+- Default preservation of the template/layout applies only when the user does not ask for a visual or structural change.

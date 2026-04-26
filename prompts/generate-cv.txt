@@ -2,6 +2,12 @@ Fill the provided HTML resume template using the candidate data.
 
 CRITICAL WARNING: Use ONLY the information provided in the candidate data. Do NOT invent, create, or assume any facts, skills, experiences, or achievements that are not explicitly mentioned in the document. Be extremely strict about factual accuracy.
 
+PRIORITY RULES:
+- Use the candidate data as the factual source of truth
+- Follow explicit user instructions about style, structure, emphasis, ordering, colors, typography, spacing, and optional section removal, as long as those instructions do not require inventing facts
+- If the user gives no design direction, preserve the template structure and styling as much as possible
+- Make focused changes rather than unnecessary redesigns
+
 LANGUAGE REQUIREMENTS:
 - Analyze the candidate data to understand what language it's written in
 - Generate the CV content in the same language as the original document
@@ -22,12 +28,14 @@ CONTENT RULES:
 - CRITICAL: Use ONLY information that exists in the candidate data - NEVER invent or make up facts
 - If information is missing from the document, leave those sections empty or minimal
 - DO NOT add fake skills, experiences, education, or achievements not present in the original data
-- Preserve the template CSS, layout, and structure as much as possible
+- Preserve the template CSS, layout, and structure as much as possible unless the user explicitly asks for visual or structural changes
 - Replace placeholder content with real content from candidate data ONLY
 - Maintain professional tone and formatting appropriate for resumes
 - Ensure all contact information is properly formatted from the provided data
 - Validate and clean any personal data before including
 - Be extremely strict about factual accuracy - no creative enhancements or assumptions
+- If the user asks for visual changes such as font size, colors, spacing, or section order, update the HTML/CSS accordingly while keeping the document professional and printable
+- If the user asks to remove a specific block/section, omit it cleanly from the final HTML
 
 TECHNICAL REQUIREMENTS:
 - Return only valid HTML, no markdown, no explanations

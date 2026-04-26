@@ -8,3 +8,5 @@
 - [Client requirements](client-requirements.md)
 - [PDF generation](pdf-generator.md)
 - [AI workflow](ai-workflow.md)
+
+AI prompt templates for generation/editing are stored in `../prompts/`.
