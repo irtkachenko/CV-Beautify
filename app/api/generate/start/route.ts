@@ -74,9 +74,9 @@ export async function POST(request: NextRequest) {
       .insert({
         user_id: userId,
         template_id: templateIdNum,
-        status: "pending",
+        status: "processing",
         error_message: null,
-        progress: "Queued for processing...",
+        progress: "Extracting document text...",
         name: file.name.replace(/\.docx$/i, ""),
         original_doc_text: null,
         original_doc_links: [],

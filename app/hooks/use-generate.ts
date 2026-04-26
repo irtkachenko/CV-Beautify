@@ -47,10 +47,8 @@ export function useGenerateCv() {
     retryDelay: 2000, // Wait 2 seconds before retry
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [api.resumes.list.path] });
-      // Also set the query to stale to ensure fresh data on next mount
-      queryClient.setQueryData([api.resumes.list.path], (old: any) => undefined);
-      
-      // Small delay to ensure server has created the record before refetching
+
+      // Kick an eager refresh without blanking the cached list during route navigation.
       setTimeout(() => {
         queryClient.refetchQueries({ queryKey: [api.resumes.list.path] });
       }, 100);
