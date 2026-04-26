@@ -15,6 +15,7 @@ CV Builder AI is a web app that turns uploaded CV documents into polished resume
 
 - `app/` - Next.js App Router UI and API routes
 - `lib/` - shared runtime utilities (supabase, fetch, pdf, i18n)
+- `lib/services/` - shared server-side business services (ownership checks, limits, AI completion, HTML post-processing)
 - `shared/` - API contracts and canonical domain types
 - `database/migrations/` - SQL schema, policies, triggers
 - `docs/` - developer and operations docs
@@ -50,3 +51,10 @@ Adapters:
 - Improved image loading resilience for cached template previews (prevents blank cards after tab/page switches).
 - Preserved template styles in secure CV render/preview by sanitizing full HTML documents and normalizing preview markup.
 - Disabled i18next suspense mode to avoid intermittent blank first render on the landing page.
+
+## Recent architecture fixes (2026-04-26)
+
+- Unified protected API auth flow to `authenticateRequest` and removed route-local auth parsing.
+- Consolidated generated CV ownership/limit checks in `lib/services/generated-cv-service.ts`.
+- Reduced `lib/cv-jobs.ts` responsibilities by extracting Groq fallback/completion and CV HTML helpers into `lib/services/`.
+- Removed duplicate CV delete endpoint shape and kept the canonical `DELETE /api/resumes/:id` contract.

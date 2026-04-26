@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { authenticateRequest } from "@lib/server-auth";
 import { mapGeneratedCvRow } from "@lib/cv-mappers";
+import { getOwnedGeneratedCv } from "@lib/services/generated-cv-service";
 
 export const dynamic = "force-dynamic";
 
@@ -20,9 +21,11 @@ export async function GET(
       return NextResponse.json({ message: "Invalid job id" }, { status: 400 });
     }
 
-    const { data: cv, error } = await supabase
-      .from("generated_cvs")
-      .select(`
+    const cvResult = await getOwnedGeneratedCv(
+      supabase,
+      userId,
+      jobId,
+      `
         *,
         cv_templates (
           id,
@@ -31,19 +34,15 @@ export async function GET(
           screenshot_url,
           description
         )
-      `)
-      .eq("id", jobId)
-      .single();
+      `
+    );
 
-    if (error || !cv) {
-      return NextResponse.json({ message: "CV generation job not found" }, { status: 404 });
+    if (!cvResult.ok) {
+      const message = cvResult.status === 404 ? "CV generation job not found" : cvResult.message;
+      return NextResponse.json({ message }, { status: cvResult.status });
     }
 
-    if (cv.user_id !== userId) {
-      return NextResponse.json({ message: "Access denied" }, { status: 403 });
-    }
-
-    const mappedCv = mapGeneratedCvRow(cv);
+    const mappedCv = mapGeneratedCvRow(cvResult.data as any);
     const statusResponse = {
       id: mappedCv.id,
       status: mappedCv.status,

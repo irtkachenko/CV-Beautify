@@ -12,47 +12,39 @@ type AuthContext =
     };
 
 export async function authenticateRequest(request: NextRequest): Promise<AuthContext> {
-  // Try Authorization header first
   const authHeader = request.headers.get("authorization");
-  let token = authHeader?.replace("Bearer ", "");
-  
-  // Extract project_ref from Supabase URL to construct cookie name
+  let token = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : null;
+
   const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
-  
+
   if (!supabaseUrl) {
     console.error("Missing SUPABASE_URL or NEXT_PUBLIC_SUPABASE_URL environment variable");
     return { response: NextResponse.json({ message: "Server configuration error" }, { status: 500 }) };
   }
-  
-  const projectRef = supabaseUrl?.match(/https:\/\/([^.]+)\.supabase\.co/)?.[1];
-  
-  console.log("Debug - Supabase URL:", supabaseUrl);
-  console.log("Debug - Project Ref:", projectRef);
-  console.log("Debug - Available cookies:", request.cookies.getAll().map(c => c.name));
-  
+
+  const projectRef = supabaseUrl.match(/https:\/\/([^.]+)\.supabase\.co/)?.[1];
   if (!projectRef) {
     console.error("Could not extract project ref from Supabase URL:", supabaseUrl);
     return { response: NextResponse.json({ message: "Invalid Supabase URL configuration" }, { status: 500 }) };
   }
-  
-  // If no header, try Supabase SSR cookie
-  if (!token && projectRef) {
+
+  if (!token) {
     const cookieName = `sb-${projectRef}-auth-token`;
-    console.log("Debug - Looking for cookie:", cookieName);
-    token = request.cookies.get(cookieName)?.value;
-    console.log("Debug - Cookie value found:", !!token);
-    console.log("Debug - Authorization header:", authHeader ? "present" : "missing");
-  }
-  
-  // If still no token, try refresh token
-  if (!token && projectRef) {
-    const refreshToken = request.cookies.get(`sb-${projectRef}-auth-token`)?.value;
-    if (refreshToken) {
+    const rawCookie = request.cookies.get(cookieName)?.value;
+
+    if (rawCookie) {
+      const decoded = decodeURIComponent(rawCookie);
       try {
-        const { data } = await getSupabaseServerClient().auth.refreshSession({ refresh_token: refreshToken });
-        token = data.session?.access_token;
-      } catch (refreshError) {
-        console.error("Failed to refresh token:", refreshError);
+        const parsed = JSON.parse(decoded);
+        if (Array.isArray(parsed) && typeof parsed[0] === "string") {
+          token = parsed[0];
+        } else if (typeof parsed === "object" && parsed !== null && typeof (parsed as { access_token?: unknown }).access_token === "string") {
+          token = (parsed as { access_token: string }).access_token;
+        }
+      } catch {
+        if (decoded.split(".").length === 3) {
+          token = decoded;
+        }
       }
     }
   }

@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { authenticateRequest } from "@lib/server-auth";
 import { runGenerateCvJob } from "@lib/cv-jobs";
 import { comprehensivePromptValidation } from "@lib/prompt-validation";
+import {
+  countGeneratedCvsForUser,
+  GENERATED_CV_LIMIT,
+} from "@lib/services/generated-cv-service";
 
 export const dynamic = "force-dynamic";
 
@@ -44,19 +48,14 @@ export async function POST(request: NextRequest) {
     }
 
     // Check user's CV generation limit
-    const { data: existingCvs, error: countError } = await supabase
-      .from("generated_cvs")
-      .select("id")
-      .eq("user_id", userId);
-
-    if (countError) {
-      console.error("Failed to check CV count:", countError);
-      return NextResponse.json({ message: "Failed to validate CV limit" }, { status: 500 });
+    const usageResult = await countGeneratedCvsForUser(supabase, userId);
+    if (!usageResult.ok) {
+      return NextResponse.json({ message: usageResult.message }, { status: usageResult.status });
     }
 
-    if (existingCvs && existingCvs.length >= 5) {
+    if (usageResult.data >= GENERATED_CV_LIMIT) {
       return NextResponse.json({ 
-        message: "You have reached the maximum limit of 5 generated CVs. Please delete an existing CV to create a new one." 
+        message: `You have reached the maximum limit of ${GENERATED_CV_LIMIT} generated CVs. Please delete an existing CV to create a new one.` 
       }, { status: 429 });
     }
 

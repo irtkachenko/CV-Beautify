@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { authenticateRequest } from "@lib/server-auth";
 import createDOMPurify from "dompurify";
 import { parseHTML } from "linkedom";
+import { getOwnedGeneratedCv } from "@lib/services/generated-cv-service";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -32,19 +33,17 @@ export async function GET(
       return NextResponse.json({ message: "Invalid CV id" }, { status: 400 });
     }
 
-    const { data: cv, error } = await supabase
-      .from("generated_cvs")
-      .select("html_content, user_id")
-      .eq("id", cvId)
-      .single();
+    const cvResult = await getOwnedGeneratedCv(
+      supabase,
+      userId,
+      cvId,
+      "html_content, user_id"
+    );
 
-    if (error || !cv) {
-      return NextResponse.json({ message: "CV not found" }, { status: 404 });
+    if (!cvResult.ok) {
+      return NextResponse.json({ message: cvResult.message }, { status: cvResult.status });
     }
-
-    if (cv.user_id !== userId) {
-      return NextResponse.json({ message: "Access denied" }, { status: 403 });
-    }
+    const cv = cvResult.data as { html_content: string | null };
 
     if (!cv.html_content) {
       return NextResponse.json({ message: "Generated CV HTML not found" }, { status: 404 });

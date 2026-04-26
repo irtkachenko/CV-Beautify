@@ -48,6 +48,7 @@ export const api = {
       path: '/api/templates' as const,
       responses: {
         200: z.array(z.custom<CvTemplate>()),
+        401: errorSchemas.unauthorized,
       },
     },
   },

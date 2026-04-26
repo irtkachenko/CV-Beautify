@@ -10,3 +10,8 @@
 - [AI workflow](ai-workflow.md)
 
 AI prompt templates for generation/editing are stored in `../prompts/`, with separate `system-*` and `user-*` files for each flow.
+
+Architecture conventions:
+- Protected API routes use centralized auth via `lib/server-auth.ts`.
+- Generated CV ownership/limit checks are shared via `lib/services/generated-cv-service.ts`.
+- Canonical CV deletion contract is `DELETE /api/resumes/:id`.

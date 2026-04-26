@@ -4,6 +4,7 @@
  */
 
 import { loadPrompt } from "./prompts";
+import Groq from "groq-sdk";
 
 export interface ValidationResult {
   isValid: boolean;
@@ -146,7 +147,6 @@ export async function validatePromptWithAI(prompt: string, context: 'generation'
   }
 
   try {
-    const Groq = require("groq-sdk").default;
     const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
     const promptTemplate = context === 'generation' ? 'validate-generation' : 'validate-edit';

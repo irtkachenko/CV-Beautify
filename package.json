@@ -7,7 +7,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "check": "tsc --incremental false",
+    "check": "tsc -p tsconfig.check.json --incremental false",
     "supabase:link": "node scripts/link-supabase.js",
     "supabase:migrate": "node scripts/migrate-supabase.js"
   },

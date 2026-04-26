@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { authenticateRequest } from "@lib/server-auth";
 import { mapGeneratedCvRow } from "@lib/cv-mappers";
+import { getOwnedGeneratedCv } from "@lib/services/generated-cv-service";
 
 export const dynamic = "force-dynamic";
 
@@ -20,9 +21,11 @@ export async function GET(
       return NextResponse.json({ message: "Invalid CV id" }, { status: 400 });
     }
 
-    const { data: cv, error } = await supabase
-      .from("generated_cvs")
-      .select(`
+    const cvResult = await getOwnedGeneratedCv(
+      supabase,
+      userId,
+      cvId,
+      `
         *,
         cv_templates (
           id,
@@ -31,19 +34,14 @@ export async function GET(
           screenshot_url,
           description
         )
-      `)
-      .eq("id", cvId)
-      .single();
+      `
+    );
 
-    if (error || !cv) {
-      return NextResponse.json({ message: "CV not found" }, { status: 404 });
+    if (!cvResult.ok) {
+      return NextResponse.json({ message: cvResult.message }, { status: cvResult.status });
     }
 
-    if (cv.user_id !== userId) {
-      return NextResponse.json({ message: "Access denied" }, { status: 403 });
-    }
-
-    return NextResponse.json(mapGeneratedCvRow(cv));
+    return NextResponse.json(mapGeneratedCvRow(cvResult.data as any));
   } catch (error) {
     console.error("CV by ID error:", error);
     return NextResponse.json({ message: "Internal server error" }, { status: 500 });
@@ -66,18 +64,9 @@ export async function DELETE(
       return NextResponse.json({ message: "Invalid CV id" }, { status: 400 });
     }
 
-    const { data: cv, error: fetchError } = await supabase
-      .from("generated_cvs")
-      .select("id, user_id")
-      .eq("id", cvId)
-      .single();
-
-    if (fetchError || !cv) {
-      return NextResponse.json({ message: "CV not found" }, { status: 404 });
-    }
-
-    if (cv.user_id !== userId) {
-      return NextResponse.json({ message: "Access denied" }, { status: 403 });
+    const cvResult = await getOwnedGeneratedCv(supabase, userId, cvId, "id, user_id");
+    if (!cvResult.ok) {
+      return NextResponse.json({ message: cvResult.message }, { status: cvResult.status });
     }
 
     const { error: deleteError } = await supabase
@@ -146,18 +135,9 @@ export async function PATCH(
       );
     }
 
-    const { data: cv, error: fetchError } = await supabase
-      .from("generated_cvs")
-      .select("id, user_id")
-      .eq("id", cvId)
-      .single();
-
-    if (fetchError || !cv) {
-      return NextResponse.json({ message: "CV not found" }, { status: 404 });
-    }
-
-    if (cv.user_id !== userId) {
-      return NextResponse.json({ message: "Access denied" }, { status: 403 });
+    const cvResult = await getOwnedGeneratedCv(supabase, userId, cvId, "id, user_id");
+    if (!cvResult.ok) {
+      return NextResponse.json({ message: cvResult.message }, { status: cvResult.status });
     }
 
     const { data: updatedCv, error: updateError } = await supabase

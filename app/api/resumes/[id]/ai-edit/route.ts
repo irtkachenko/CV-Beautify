@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { authenticateRequest } from "@lib/server-auth";
 import { runAiEditJob } from "@lib/cv-jobs";
 import { comprehensivePromptValidation } from "@lib/prompt-validation";
+import { getOwnedGeneratedCv } from "@lib/services/generated-cv-service";
 
 export const dynamic = "force-dynamic";
 
@@ -25,24 +26,22 @@ export async function POST(
     const { prompt, useOriginalDocumentContext } = body;
 
     // Verify ownership
-    const { data: cv, error: fetchError } = await supabase
-      .from("generated_cvs")
-      .select(`
+    const cvResult = await getOwnedGeneratedCv(
+      supabase,
+      userId,
+      cvId,
+      `
         *,
         cv_templates (
           file_name
         )
-      `)
-      .eq("id", cvId)
-      .single();
+      `
+    );
 
-    if (fetchError || !cv) {
-      return NextResponse.json({ message: "CV not found" }, { status: 404 });
+    if (!cvResult.ok) {
+      return NextResponse.json({ message: cvResult.message }, { status: cvResult.status });
     }
-
-    if (cv.user_id !== userId) {
-      return NextResponse.json({ message: "Access denied" }, { status: 403 });
-    }
+    const cv = cvResult.data as any;
 
     if (!prompt || typeof prompt !== "string" || prompt.trim().length < 5) {
       return NextResponse.json({ message: "Prompt is required" }, { status: 400 });

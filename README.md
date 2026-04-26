@@ -41,6 +41,8 @@ Optional:
 
 - All protected API routes must run Supabase queries in the authenticated user context (Bearer token), not anonymous context.
 - RLS is enabled on user data tables. If token context is not forwarded, requests will fail even after successful OAuth.
+- Route auth is centralized in `lib/server-auth.ts` (header/cookie token resolution + user validation).
+- Canonical CV deletion endpoint is `DELETE /api/resumes/:id` (no query-param fallback path).
 
 ## Useful scripts
 
