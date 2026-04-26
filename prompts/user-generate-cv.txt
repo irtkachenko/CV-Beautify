@@ -1,0 +1,14 @@
+TASK: Generate the final resume HTML.
+
+USER DIRECTIVES
+{user_directives}
+
+CANDIDATE DATA
+"""
+{candidate_data}
+"""
+
+HTML TEMPLATE
+"""
+{template_html}
+"""

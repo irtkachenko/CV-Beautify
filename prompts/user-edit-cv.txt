@@ -1,0 +1,12 @@
+TASK: Edit the current resume HTML.
+
+USER DIRECTIVES
+{user_directives}
+
+FACTUAL CONTEXT
+{original_doc_context}
+
+CURRENT HTML
+"""
+{current_html}
+"""

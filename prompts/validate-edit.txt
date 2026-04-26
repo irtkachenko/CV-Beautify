@@ -11,6 +11,9 @@ ALLOWED CONTENT (DO NOT BLOCK):
 - Translation requests (e.g., "translate to English", "make this in Ukrainian", "change language")
 - Formatting requests (e.g., "make it more professional", "improve layout", "better formatting")
 - Content enhancement requests (e.g., "make it more impressive", "highlight achievements")
+- Visual/style requests (e.g., "make the header smaller", "change the skills section color", "increase spacing")
+- Structural requests (e.g., "remove the projects block", "move education above experience")
+- References to HTML tags, CSS classes, selectors, font sizes, colors, spacing, or section names when used as editing instructions
 - Language changes and localization
 - Professional tone adjustments
 
@@ -24,6 +27,6 @@ Respond with ONLY:
 "SAFE" if the prompt is safe and appropriate for CV work
 "BLOCKED: [brief reason]" if the prompt contains actual harmful content
 
-Be reasonable - translation and formatting are legitimate CV operations.
+Be reasonable - translation, formatting, visual styling, and section-level editing are legitimate CV operations.
 
 User prompt: {prompt}

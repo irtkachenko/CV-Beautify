@@ -4,7 +4,7 @@ import mammoth from "mammoth";
 import Groq from "groq-sdk";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getModelChain } from "./groq-models";
-import { loadPrompt } from "./prompts";
+import { buildEditPromptMessages, buildGenerationPromptMessages } from "./cv-prompt-builder";
 import { comprehensivePromptValidation } from "./prompt-validation";
 
 type TemplateRow = {
@@ -191,22 +191,16 @@ async function generateHtmlWithGroq({
     throw new Error(validation.warning || "Invalid prompt content");
   }
 
-  const userPrompt = await loadPrompt("generate-cv", {
-    additional_instruction: validation.cleanedPrompt || generationPrompt || "",
-    doc_text: docText,
-    template_html: templateHtml,
+  const messages = await buildGenerationPromptMessages({
+    templateHtml,
+    docText,
+    generationPrompt: validation.cleanedPrompt || generationPrompt || "",
   });
 
   const result = await runGroqCompletionWithFallback({
     temperature: 0.3,
     maxTokens: 6000,
-    messages: [
-      {
-        role: "system",
-        content: "You are an expert resume formatter. Follow explicit user instructions for style and structure when they are safe and factual. Return only complete HTML content suitable for direct rendering.",
-      },
-      { role: "user", content: userPrompt },
-    ],
+    messages,
   });
 
   // Clean up markdown code block wrappers if present
@@ -232,22 +226,16 @@ async function editHtmlWithGroq({
     throw new Error(validation.warning || "Invalid prompt content");
   }
 
-  const userPrompt = await loadPrompt("edit-cv", {
+  const messages = await buildEditPromptMessages({
+    currentHtml,
     prompt: validation.cleanedPrompt || prompt,
-    original_doc_context: originalDocText ? `Original candidate context:\n${originalDocText}` : "",
-    current_html: currentHtml,
+    originalDocText,
   });
 
   const result = await runGroqCompletionWithFallback({
     temperature: 0.4,
     maxTokens: 6000,
-    messages: [
-      {
-        role: "system",
-        content: "You are an expert resume editor. Follow explicit user instructions for style, structure, and section-level edits when they are safe and professional. Return only complete HTML content suitable for direct rendering.",
-      },
-      { role: "user", content: userPrompt },
-    ],
+    messages,
   });
 
   // Clean up markdown code block wrappers if present

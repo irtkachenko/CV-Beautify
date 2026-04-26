@@ -37,8 +37,9 @@ Adapters:
 
 ## AI prompt behavior
 
-- Runtime prompt templates are stored in `prompts/`.
-- CV generation and AI edit should preserve the base template by default, but explicit user requests for style or structure changes take priority.
+- Runtime prompt templates are stored in `prompts/` and split into dedicated `system-*` and `user-*` templates.
+- CV generation and AI edit preserve the base template by default, but explicit user requests for style or structure changes take priority.
+- User input is normalized into a directive block before prompt assembly so layout/style requests are not buried inside generic instructions.
 - Supported instruction types include targeted typography, color, spacing, section reorder, and removing a specific section/block when requested.
 
 ## Recent reliability fixes (2026-04-12)

@@ -20,7 +20,8 @@ Editor-specific adapters:
 
 ## CV prompt behavior
 
-- Runtime prompt templates live in `prompts/generate-cv.txt` and `prompts/edit-cv.txt`.
+- Runtime prompt templates live in `prompts/system-generate-cv.txt`, `prompts/user-generate-cv.txt`, `prompts/system-edit-cv.txt`, and `prompts/user-edit-cv.txt`.
+- Prompt assembly is handled in `lib/cv-prompt-builder.ts`.
 - Safety and factual rules stay strict.
 - Layout and styling preservation is the default only when the user gives no explicit visual/structural direction.
 - Explicit user requests should be honored when safe, including:
@@ -29,4 +30,5 @@ Editor-specific adapters:
   - adjusting spacing/alignment
   - reordering sections
   - removing a specific block/section
+- Raw user text is preserved and also normalized into an explicit directive list so concrete requests are easier for the model to follow.
 - Edits should stay targeted; do not redesign unrelated parts of the document when a local change is enough.

@@ -9,4 +9,4 @@
 - [PDF generation](pdf-generator.md)
 - [AI workflow](ai-workflow.md)
 
-AI prompt templates for generation/editing are stored in `../prompts/`.
+AI prompt templates for generation/editing are stored in `../prompts/`, with separate `system-*` and `user-*` files for each flow.

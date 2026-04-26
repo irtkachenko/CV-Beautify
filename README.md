@@ -59,6 +59,7 @@ Optional:
 
 ## AI prompt behavior
 
-- Prompt templates for CV generation/editing live in `prompts/`.
+- Prompt templates for CV generation/editing live in `prompts/` and are split into dedicated `system-*` and `user-*` templates.
+- User instructions are normalized into an explicit `USER DIRECTIVES` block before being sent to the model.
 - Explicit user requests for styling and structure should be honored when safe, including changes like font size, colors, spacing, section order, and removing a specific block.
 - Default preservation of the template/layout applies only when the user does not ask for a visual or structural change.

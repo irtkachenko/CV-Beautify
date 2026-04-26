@@ -108,11 +108,10 @@ export function validatePrompt(prompt: string): ValidationResult {
   // Clean up any potential issues while preserving intent
   let cleanedPrompt = prompt.trim();
 
-  // Remove any potential HTML tags that weren't caught by patterns
-  cleanedPrompt = cleanedPrompt.replace(/<[^>]*>/g, '');
-
   // Remove excessive whitespace
-  cleanedPrompt = cleanedPrompt.replace(/\s+/g, ' ');
+  cleanedPrompt = cleanedPrompt.replace(/\r\n/g, "\n");
+  cleanedPrompt = cleanedPrompt.replace(/[ \t]+/g, " ");
+  cleanedPrompt = cleanedPrompt.replace(/\n{3,}/g, "\n\n");
 
   return {
     isValid: true,
@@ -133,12 +132,8 @@ export function validateGenerationPrompt(generationPrompt?: string | null): Vali
   // Additional checks for CV generation
   if (result.isValid) {
     const inappropriatePatterns = [
-      /fake/i,
-      /false/i,
-      /lie/i,
-      /dishonest/i,
-      /misleading/i,
-      /fraud/i,
+      /(add|invent|create|fabricate).*(fake|false|made up)/i,
+      /(lie|dishonest|fraud|misleading)/i,
     ];
 
     const lowerPrompt = generationPrompt.toLowerCase();
@@ -164,12 +159,9 @@ export function validateEditPrompt(editPrompt: string): ValidationResult {
   // Additional checks for CV editing
   if (result.isValid) {
     const inappropriateEditPatterns = [
-      /remove.*experience/i,
-      /hide.*employment/i,
-      /delete.*history/i,
-      /fake.*skill/i,
-      /add.*fake/i,
-      /invent/i,
+      /(add|invent|create|fabricate).*(fake|false|made up)/i,
+      /(falsify|misrepresent|lie about)/i,
+      /(change|rewrite|edit).*(dates|titles|companies|experience).*(to hide|to mislead|to fake)/i,
     ];
 
     const lowerPrompt = editPrompt.toLowerCase();
@@ -204,6 +196,10 @@ export async function validatePromptWithAI(prompt: string, context: 'generation'
     const response = await groq.chat.completions.create({
       model: "llama-3.1-8b-instant",
       messages: [
+        {
+          role: "system",
+          content: "You are a strict safety validator for resume-generation prompts. Follow the validation rubric exactly and return only the requested verdict.",
+        },
         { role: "user", content: systemPrompt }
       ],
       max_tokens: 50,
