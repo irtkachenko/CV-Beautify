@@ -1,10 +1,11 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { api, buildUrl } from "@shared/routes";
-import type { ResumesListResponse } from "@shared/routes";
+import type { GeneratedCvResponse, ResumesListResponse } from "@shared/routes";
 import i18n from "@lib/i18n";
 import { parseWithLogging } from "@lib/validation";
 import { authedFetch } from "@lib/authed-fetch";
+import { activeResumeJobsQueryKey } from "@/hooks/use-cvs";
 
 // Input type for file upload
 type GenerateCvInput = {
@@ -47,6 +48,11 @@ export function useGenerateCv() {
     retry: 1, // Retry once for generation failures
     retryDelay: 2000, // Wait 2 seconds before retry
     onSuccess: (response) => {
+      queryClient.setQueryData<GeneratedCvResponse[]>(activeResumeJobsQueryKey, (current = []) => {
+        const withoutSameId = current.filter((cv) => cv.id !== response.cv.id);
+        return [response.cv, ...withoutSameId];
+      });
+
       queryClient.setQueryData<ResumesListResponse | undefined>(
         [api.resumes.list.path],
         (current) => {
@@ -140,8 +146,32 @@ export function usePollingJob(jobId: number, initialStatus: string) {
 
   // Handle side effects (like invalidating queries) in useEffect, not in queryFn
   useEffect(() => {
-    // Invalidate when we get a terminal status OR when data changes from non-terminal to terminal
     const currentStatus = query.data?.status;
+
+    if (query.data) {
+      queryClient.setQueryData<GeneratedCvResponse[]>(activeResumeJobsQueryKey, (current = []) => {
+        const existing = current.find((cv) => cv.id === jobId);
+        if (!existing) {
+          return current;
+        }
+
+        const nextCv: GeneratedCvResponse = {
+          ...existing,
+          status: query.data.status,
+          progress: query.data.progress ?? existing.progress,
+          pdfUrl: query.data.pdfUrl ?? existing.pdfUrl,
+          htmlContent: query.data.htmlContent ?? existing.htmlContent,
+          errorMessage: query.data.errorMessage ?? existing.errorMessage,
+          name: query.data.name ?? existing.name,
+          template: query.data.template ?? existing.template,
+          updatedAt: new Date().toISOString(),
+        };
+
+        return [nextCv, ...current.filter((cv) => cv.id !== jobId)];
+      });
+    }
+
+    // Invalidate when we get a terminal status OR when data changes from non-terminal to terminal
     const isTerminalStatus = currentStatus === "complete" || currentStatus === "failed";
     
     if (isTerminalStatus) {
