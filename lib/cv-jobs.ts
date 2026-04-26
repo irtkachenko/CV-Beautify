@@ -29,6 +29,13 @@ type GeneratedCvRow = {
   cv_templates?: TemplateRow | null;
 };
 
+function normalizeHtmlForDiff(value: string): string {
+  return value
+    .replace(/\s+/g, " ")
+    .replace(/>\s+</g, "><")
+    .trim();
+}
+
 async function resolveTemplateHtml(fileName: string): Promise<string> {
   const candidates = [
     path.join(process.cwd(), "public", "templates", fileName),
@@ -292,6 +299,19 @@ export async function runAiEditJob({
     const html = ensureTemplateStyles(generatedHtml, currentHtml);
     if (!html || html.length < 200) {
       throw new Error("Groq returned empty or invalid HTML output for AI edit");
+    }
+
+    const before = normalizeHtmlForDiff(currentHtml);
+    const after = normalizeHtmlForDiff(html);
+    if (before === after) {
+      await setProgress(supabase, cvId, {
+        status: "complete",
+        progress: null,
+        error_message: "AI edit did not apply any changes. Try a more specific instruction.",
+        html_content: currentHtml,
+        pdf_url: `/api/generated-cv/${cvId}/render`,
+      });
+      return;
     }
 
     await setProgress(supabase, cvId, {

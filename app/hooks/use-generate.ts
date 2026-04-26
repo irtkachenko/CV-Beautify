@@ -93,6 +93,10 @@ export function usePollingJob(jobId: number, initialStatus: string) {
         setData(next);
         setError(null);
         currentStatus = next.status;
+        if (currentStatus === "complete" && !next.pdfUrl) {
+          // Avoid terminal "success" without render URL; force another poll tick.
+          currentStatus = "processing";
+        }
 
         if (currentStatus === "pending" || currentStatus === "processing") {
           timeoutId = window.setTimeout(fetchStatus, 1500);

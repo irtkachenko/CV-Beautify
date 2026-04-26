@@ -115,18 +115,15 @@ export default function CvViewPage() {
 
     setCvData((prev) => {
       if (!prev) return prev;
-      
-      // Only update status if current CV is in pending/processing state
-      // This prevents stuck loading when polling returns stale data
       const shouldUpdateStatus = prev.status === "pending" || prev.status === "processing";
       const terminal = polledJob.status === "complete" || polledJob.status === "failed";
       
       return {
         ...prev,
-        status: shouldUpdateStatus ? polledJob.status : prev.status,
+        status: terminal ? polledJob.status : (shouldUpdateStatus ? polledJob.status : prev.status),
         progress: shouldUpdateStatus && terminal ? (polledJob.progress ?? null) : (polledJob.progress ?? prev.progress),
-        errorMessage: shouldUpdateStatus ? (polledJob.errorMessage ?? prev.errorMessage) : prev.errorMessage,
-        pdfUrl: shouldUpdateStatus ? (polledJob.pdfUrl ?? prev.pdfUrl) : prev.pdfUrl,
+        errorMessage: terminal ? (polledJob.errorMessage ?? prev.errorMessage) : (shouldUpdateStatus ? (polledJob.errorMessage ?? prev.errorMessage) : prev.errorMessage),
+        pdfUrl: terminal ? (polledJob.pdfUrl ?? prev.pdfUrl) : (shouldUpdateStatus ? (polledJob.pdfUrl ?? prev.pdfUrl) : prev.pdfUrl),
         template: shouldUpdateStatus ? (polledJob.template || prev.template) : prev.template,
       };
     });
@@ -156,6 +153,19 @@ export default function CvViewPage() {
       syncedTerminalStatusRef.current = null;
     }
   }, [polledJob, fetchCvData, t, toast]);
+
+  useEffect(() => {
+    if (!cvData) return;
+    if (cvData.status !== "pending" && cvData.status !== "processing") return;
+
+    const intervalId = window.setInterval(() => {
+      void fetchCvData();
+    }, 3000);
+
+    return () => {
+      window.clearInterval(intervalId);
+    };
+  }, [cvData?.id, cvData?.status, fetchCvData]);
 
   useEffect(() => {
     if (!cvData || cvData.status !== "failed") return;
