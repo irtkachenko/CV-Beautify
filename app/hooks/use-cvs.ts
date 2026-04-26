@@ -5,52 +5,33 @@ import { useToast } from "@/hooks/use-toast";
 import i18n from "@lib/i18n";
 import { parseWithLogging } from "@lib/validation";
 import { authedFetch } from "@lib/authed-fetch";
-import type { ResumesListResponse } from "@shared/routes";
-import { replaceResumeList } from "@lib/resume-list-store";
 
 type UseMyResumesOptions = {
   enabled?: boolean;
-  watchProcessing?: boolean;
 };
 
-const RESUMES_QUERY_KEY = ["api", "resumes", "list"] as const;
-
-async function fetchResumesList(): Promise<ResumesListResponse> {
-  const res = await authedFetch(`${api.resumes.list.path}?_t=${Date.now()}`);
-  if (!res.ok) {
-    if (res.status === 401) {
-      throw new Error("Unauthorized");
-    }
-    throw new Error("Failed to fetch resumes");
-  }
-
-  const data = await res.json();
-  const parsed = parseWithLogging(api.resumes.list.responses[200], data, "resumes.list");
-  return replaceResumeList(parsed);
-}
+const RESUMES_QUERY_KEY = [api.resumes.list.path] as const;
 
 export function useMyResumes(options: UseMyResumesOptions = {}) {
-  const { enabled = true, watchProcessing = false } = options;
+  const { enabled = true } = options;
   const queryClient = useQueryClient();
 
-  const query = useQuery<ResumesListResponse, Error>({
+  const query = useQuery({
     queryKey: RESUMES_QUERY_KEY,
-    queryFn: fetchResumesList,
     enabled,
-    staleTime: 0,
-    refetchOnWindowFocus: enabled,
+    staleTime: 1000,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
     retry: 2,
-    refetchInterval:
-      enabled && watchProcessing
-        ? (current) => {
-            const resumes = current.state.data;
-            const hasProcessing = Boolean(
-              resumes?.cvs.some((cv) => cv.status === "pending" || cv.status === "processing")
-            );
-            const hasError = Boolean(current.state.error);
-            return hasProcessing || hasError || !resumes ? 3000 : 10000;
-          }
-        : false,
+    queryFn: async () => {
+      const res = await authedFetch(api.resumes.list.path);
+      if (!res.ok) {
+        if (res.status === 401) throw new Error("Unauthorized");
+        throw new Error("Failed to fetch resumes");
+      }
+      const data = await res.json();
+      return parseWithLogging(api.resumes.list.responses[200], data, "resumes.list");
+    },
   });
 
   const refresh = useCallback(() => {
@@ -59,15 +40,15 @@ export function useMyResumes(options: UseMyResumesOptions = {}) {
 
   return {
     data: query.data ?? null,
-    isLoading: query.isLoading || query.isFetching,
+    isLoading: query.isLoading,
     error: query.error ?? null,
     refresh,
   };
 }
 
 export function useDeleteResume() {
-  const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { toast } = useToast();
 
   const deleteMutation = useMutation({
     mutationFn: async (id: number) => {
@@ -82,15 +63,14 @@ export function useDeleteResume() {
         }
         throw new Error(i18n.t("errors.delete_resume_failed") || "Failed to delete resume");
       }
-
       return true;
     },
     onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: RESUMES_QUERY_KEY });
       toast({
         title: i18n.t("toast.cv_deleted_title") || "Resume Deleted",
         description: i18n.t("toast.cv_deleted_desc") || "Your generated CV has been removed.",
       });
-      void queryClient.invalidateQueries({ queryKey: RESUMES_QUERY_KEY });
     },
     onError: (error) => {
       toast({
@@ -118,6 +98,6 @@ export function useDeleteResume() {
 
   return {
     deleteResume,
-    deletingId: (deleteMutation.isPending ? deleteMutation.variables : null) ?? null,
+    deletingId: deleteMutation.isPending ? deleteMutation.variables ?? null : null,
   };
 }

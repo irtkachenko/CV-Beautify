@@ -17,7 +17,6 @@ export default function MyResumesPage() {
   const { user, isLoading: isAuthLoading } = useAuth();
   const { data: resumesData, isLoading, error, refresh } = useMyResumes({
     enabled: !!user,
-    watchProcessing: true,
   });
   const { deleteResume, deletingId } = useDeleteResume();
 
