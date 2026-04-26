@@ -5,9 +5,11 @@ import i18n from "@lib/i18n";
 import { parseWithLogging } from "@lib/validation";
 import { authedFetch } from "@lib/authed-fetch";
 import type { ResumesListResponse } from "@shared/routes";
-import { removeResumeFromList, replaceResumeList } from "@lib/resume-list-store";
+import { mergeResumeLists, removeResumeFromList, replaceResumeList } from "@lib/resume-list-store";
 
 export function useMyResumes() {
+  const queryClient = useQueryClient();
+
   return useQuery({
     queryKey: [api.resumes.list.path],
     staleTime: 1000,
@@ -22,7 +24,8 @@ export function useMyResumes() {
 
       const data = await res.json();
       const parsed = parseWithLogging(api.resumes.list.responses[200], data, "resumes.list");
-      return replaceResumeList(parsed);
+      const current = queryClient.getQueryData<ResumesListResponse>([api.resumes.list.path]);
+      return mergeResumeLists(replaceResumeList(parsed), current);
     },
     retry: 2,
   });
