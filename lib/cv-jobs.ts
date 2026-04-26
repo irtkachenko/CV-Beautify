@@ -122,6 +122,31 @@ async function editHtmlWithGroq({
   return normalizeCommonMojibake(extractHtmlFromModelResponse(result));
 }
 
+async function editHtmlWithGroqForceVisibleChange({
+  currentHtml,
+  prompt,
+  originalDocText,
+}: {
+  currentHtml: string;
+  prompt: string;
+  originalDocText?: string | null;
+}) {
+  const forcedPrompt = [
+    prompt.trim(),
+    "",
+    "IMPORTANT: Apply at least one visible, concrete change to the HTML output.",
+    "Do not return the original HTML unchanged.",
+  ]
+    .join("\n")
+    .trim();
+
+  return editHtmlWithGroq({
+    currentHtml,
+    prompt: forcedPrompt,
+    originalDocText,
+  });
+}
+
 export async function runGenerateCvJob({
   supabase,
   cvId,
@@ -276,6 +301,7 @@ export async function runAiEditJob({
 }) {
   try {
     console.info(`[ai-edit:${cvId}] Job started`);
+    console.info(`[ai-edit:${cvId}] Prompt length: ${prompt.length}`);
     await setProgress(supabase, cvId, {
       status: "processing",
       progress: "Editing CV with Groq...",
@@ -290,11 +316,15 @@ export async function runAiEditJob({
       currentHtml = await resolveTemplateHtml(cv.cv_templates.file_name);
     }
 
+    const firstAttemptStartedAt = Date.now();
     const generatedHtml = await editHtmlWithGroq({
       currentHtml,
       prompt,
       originalDocText: useOriginalDocumentContext ? cv.original_doc_text : null,
     });
+    console.info(
+      `[ai-edit:${cvId}] First AI response received in ${Date.now() - firstAttemptStartedAt}ms (chars: ${generatedHtml.length})`
+    );
 
     const html = ensureTemplateStyles(generatedHtml, currentHtml);
     if (!html || html.length < 200) {
@@ -304,6 +334,32 @@ export async function runAiEditJob({
     const before = normalizeHtmlForDiff(currentHtml);
     const after = normalizeHtmlForDiff(html);
     if (before === after) {
+      console.info(`[ai-edit:${cvId}] First attempt produced no HTML changes. Retrying with forced visible-change instruction.`);
+      const retryStartedAt = Date.now();
+      const retryHtmlRaw = await editHtmlWithGroqForceVisibleChange({
+        currentHtml,
+        prompt,
+        originalDocText: useOriginalDocumentContext ? cv.original_doc_text : null,
+      });
+      console.info(
+        `[ai-edit:${cvId}] Retry AI response received in ${Date.now() - retryStartedAt}ms (chars: ${retryHtmlRaw.length})`
+      );
+      const retryHtml = ensureTemplateStyles(retryHtmlRaw, currentHtml);
+      const retryAfter = normalizeHtmlForDiff(retryHtml);
+
+      if (retryAfter !== before) {
+        console.info(`[ai-edit:${cvId}] Retry produced HTML changes. Saving updated content.`);
+        await setProgress(supabase, cvId, {
+          status: "complete",
+          progress: null,
+          error_message: null,
+          html_content: retryHtml,
+          pdf_url: `/api/generated-cv/${cvId}/render`,
+        });
+        return;
+      }
+
+      console.warn(`[ai-edit:${cvId}] Retry also produced no HTML changes. Completing with no-op warning.`);
       await setProgress(supabase, cvId, {
         status: "complete",
         progress: null,
@@ -322,7 +378,7 @@ export async function runAiEditJob({
       pdf_url: `/api/generated-cv/${cvId}/render`,
     });
 
-    console.info(`[ai-edit:${cvId}] Job completed`);
+    console.info(`[ai-edit:${cvId}] Job completed with changed HTML`);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown AI edit error";
     console.error(`[ai-edit:${cvId}] Job failed:`, message);

@@ -182,6 +182,18 @@ export default function CvViewPage() {
   }, [cvData, t, toast]);
 
   useEffect(() => {
+    if (!cvData || cvData.status !== "complete" || !cvData.errorMessage) return;
+    if (lastFailedMessageRef.current === cvData.errorMessage) return;
+
+    lastFailedMessageRef.current = cvData.errorMessage;
+    toast({
+      title: t("cv_view.toasts.ai_edit_failed_title"),
+      description: cvData.errorMessage,
+      variant: "destructive",
+    });
+  }, [cvData, t, toast]);
+
+  useEffect(() => {
     const hasOriginalContext =
       Boolean(cvData?.originalDocText?.trim()) ||
       (Array.isArray(cvData?.originalDocLinks) && cvData.originalDocLinks.length > 0);
