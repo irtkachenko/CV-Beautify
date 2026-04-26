@@ -99,23 +99,21 @@ export function CvStatusCard({ cv }: { cv: GeneratedCvResponse }) {
       <Link href={`/cv/${cv.id}`} className="block group">
         <div className="glass-card rounded-2xl overflow-hidden group relative flex flex-col cursor-pointer hover:shadow-xl transition-all duration-300">
           {/* Delete Button */}
-          {!isProcessing && (
-            <button
-              disabled={isDeleting}
-              className="absolute top-3 left-3 p-2 bg-destructive hover:bg-destructive/90 text-white rounded-full shadow-lg transition-all duration-200 hover:scale-110 hover:shadow-xl z-10 disabled:opacity-50 disabled:cursor-not-allowed"
-              title={t("cv_card.delete_btn")}
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                setIsDeleteDialogOpen(true);
-              }}
-            >
-              <Trash2 className="w-4 h-4" />
-            </button>
-          )}
+          <button
+            disabled={isDeleting}
+            className="absolute top-3 left-3 p-2 bg-destructive hover:bg-destructive/90 text-white rounded-full shadow-lg transition-all duration-200 hover:scale-110 hover:shadow-xl z-10 disabled:opacity-50 disabled:cursor-not-allowed"
+            title={t("cv_card.delete_btn")}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setIsDeleteDialogOpen(true);
+            }}
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
 
           {/* Delete Processing Overlay */}
-          {!isProcessing && isDeleteDialogOpen && isDeleting && (
+          {isDeleteDialogOpen && isDeleting && (
             <div className="absolute inset-0 bg-background/80 backdrop-blur-sm z-20 flex items-center justify-center">
               <div className="text-center text-sm text-muted-foreground flex items-center">
                 <Loader2 className="w-4 h-4 animate-spin mr-2" />
