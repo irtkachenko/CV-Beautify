@@ -175,6 +175,40 @@ async function runGroqCompletionWithFallback({
   throw new Error(errorSummary);
 }
 
+function extractHtmlFromModelResponse(response: string): string {
+  const trimmed = response.trim();
+  if (!trimmed) {
+    return "";
+  }
+
+  const fencedHtmlMatch = trimmed.match(/```html\s*([\s\S]*?)```/i);
+  if (fencedHtmlMatch?.[1]) {
+    return fencedHtmlMatch[1].trim();
+  }
+
+  const genericFenceMatch = trimmed.match(/```\s*([\s\S]*?)```/i);
+  if (genericFenceMatch?.[1] && /<[a-z!][\s\S]*>/i.test(genericFenceMatch[1])) {
+    return genericFenceMatch[1].trim();
+  }
+
+  const documentStartMatch = trimmed.match(/<!doctype html|<html\b|<body\b/i);
+  if (documentStartMatch?.index !== undefined) {
+    const htmlSlice = trimmed.slice(documentStartMatch.index);
+    const endMatch = htmlSlice.match(/<\/html>|<\/body>/i);
+    if (endMatch?.index !== undefined) {
+      return htmlSlice.slice(0, endMatch.index + endMatch[0].length).trim();
+    }
+    return htmlSlice.trim();
+  }
+
+  const firstTagMatch = trimmed.match(/<[a-z][^>]*>/i);
+  if (firstTagMatch?.index !== undefined) {
+    return trimmed.slice(firstTagMatch.index).trim();
+  }
+
+  return trimmed;
+}
+
 async function generateHtmlWithGroq({
   templateHtml,
   docText,
@@ -196,12 +230,7 @@ async function generateHtmlWithGroq({
     messages,
   });
 
-  // Clean up markdown code block wrappers if present
-  return result
-    .replace(/^```html\s*\n?/i, '') // Remove opening ```html
-    .replace(/^```\s*\n?/, '')      // Remove opening ```
-    .replace(/\n?```\s*$/i, '')     // Remove closing ```
-    .trim();
+  return extractHtmlFromModelResponse(result);
 }
 
 async function editHtmlWithGroq({
@@ -225,12 +254,7 @@ async function editHtmlWithGroq({
     messages,
   });
 
-  // Clean up markdown code block wrappers if present
-  return result
-    .replace(/^```html\s*\n?/i, '') // Remove opening ```html
-    .replace(/^```\s*\n?/, '')      // Remove opening ```
-    .replace(/\n?```\s*$/i, '')     // Remove closing ```
-    .trim();
+  return extractHtmlFromModelResponse(result);
 }
 
 function extractStyleBlocks(html: string): string {
