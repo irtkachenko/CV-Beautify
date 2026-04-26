@@ -64,7 +64,7 @@ export function usePollingJob(jobId: number, initialStatus: string) {
 
     const fetchStatus = async () => {
       try {
-        await authedFetch("/api/cv-jobs/run-next", { method: "POST" }).catch(() => null);
+        void authedFetch("/api/cv-jobs/run-next", { method: "POST" }).catch(() => null);
         const url = buildUrl(api.generate.status.path, { jobId });
         const res = await authedFetch(url);
         if (!res.ok) {

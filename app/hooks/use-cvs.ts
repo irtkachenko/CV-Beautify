@@ -31,7 +31,7 @@ export function useMyResumes(options: UseMyResumesOptions = {}) {
     networkMode: "always",
     retry: 2,
     queryFn: async () => {
-      await authedFetch("/api/cv-jobs/run-next", { method: "POST" }).catch(() => null);
+      void authedFetch("/api/cv-jobs/run-next", { method: "POST" }).catch(() => null);
 
       const {
         data: { user },

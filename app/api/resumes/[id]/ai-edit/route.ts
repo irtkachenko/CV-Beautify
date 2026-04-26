@@ -1,10 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { authenticateRequest } from "@lib/server-auth";
+import { runAiEditJob } from "@lib/cv-jobs";
 import { comprehensivePromptValidation } from "@lib/prompt-validation";
 import { getOwnedGeneratedCv } from "@lib/services/generated-cv-service";
 import { enqueueCvJob } from "@lib/cv-jobs-queue";
 
 export const dynamic = "force-dynamic";
+
+function isQueueTableMissing(message: string): boolean {
+  return /(cv_jobs|table\s+.*cv_jobs|schema cache|does not exist)/i.test(message);
+}
 
 export async function POST(
   request: NextRequest,
@@ -82,15 +87,27 @@ export async function POST(
     });
 
     if (!enqueueResult.ok) {
-      await supabase
-        .from("generated_cvs")
-        .update({
-          status: "failed",
-          progress: null,
-          error_message: enqueueResult.message,
-        })
-        .eq("id", cvId);
-      return NextResponse.json({ message: "Failed to enqueue AI edit" }, { status: 500 });
+      if (isQueueTableMissing(enqueueResult.message)) {
+        runAiEditJob({
+          supabase,
+          cvId,
+          cv,
+          prompt: promptValidation.cleanedPrompt || trimmedPrompt,
+          useOriginalDocumentContext: Boolean(useOriginalDocumentContext),
+        }).catch((error) => {
+          console.error(`[ai-edit:${cvId}] Fallback job failed:`, error);
+        });
+      } else {
+        await supabase
+          .from("generated_cvs")
+          .update({
+            status: "failed",
+            progress: null,
+            error_message: enqueueResult.message,
+          })
+          .eq("id", cvId);
+        return NextResponse.json({ message: "Failed to enqueue AI edit" }, { status: 500 });
+      }
     }
 
     return NextResponse.json({ jobId: cvId }, { status: 202 });

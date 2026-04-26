@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import mammoth from "mammoth";
 import { authenticateRequest } from "@lib/server-auth";
+import { runGenerateCvJobFromText } from "@lib/cv-jobs";
 import { mapGeneratedCvRow } from "@lib/cv-mappers";
 import { comprehensivePromptValidation } from "@lib/prompt-validation";
 import {
@@ -10,6 +11,10 @@ import {
 import { enqueueCvJob } from "@lib/cv-jobs-queue";
 
 export const dynamic = "force-dynamic";
+
+function isQueueTableMissing(message: string): boolean {
+  return /(cv_jobs|table\s+.*cv_jobs|schema cache|does not exist)/i.test(message);
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -108,15 +113,27 @@ export async function POST(request: NextRequest) {
     });
 
     if (!enqueueResult.ok) {
-      await supabase
-        .from("generated_cvs")
-        .update({
-          status: "failed",
-          progress: null,
-          error_message: enqueueResult.message,
-        })
-        .eq("id", newCv.id);
-      return NextResponse.json({ message: "Failed to enqueue CV generation" }, { status: 500 });
+      if (isQueueTableMissing(enqueueResult.message)) {
+        runGenerateCvJobFromText({
+          supabase,
+          cvId: newCv.id,
+          template,
+          docText,
+          generationPrompt: promptValidation.cleanedPrompt || generationPrompt || "",
+        }).catch((error) => {
+          console.error(`[generate:${newCv.id}] Fallback text job failed:`, error);
+        });
+      } else {
+        await supabase
+          .from("generated_cvs")
+          .update({
+            status: "failed",
+            progress: null,
+            error_message: enqueueResult.message,
+          })
+          .eq("id", newCv.id);
+        return NextResponse.json({ message: "Failed to enqueue CV generation" }, { status: 500 });
+      }
     }
 
     const createdCv = mapGeneratedCvRow({
