@@ -209,6 +209,20 @@ function extractHtmlFromModelResponse(response: string): string {
   return trimmed;
 }
 
+function normalizeCommonMojibake(value: string): string {
+  return value
+    .replace(/â€¢/g, "•")
+    .replace(/â€“/g, "–")
+    .replace(/â€”/g, "—")
+    .replace(/â€˜/g, "‘")
+    .replace(/â€™/g, "’")
+    .replace(/â€œ/g, "“")
+    .replace(/â€\u009d/g, "”")
+    .replace(/â€¦/g, "…")
+    .replace(/Â /g, " ")
+    .replace(/Â/g, "");
+}
+
 async function generateHtmlWithGroq({
   templateHtml,
   docText,
@@ -230,7 +244,7 @@ async function generateHtmlWithGroq({
     messages,
   });
 
-  return extractHtmlFromModelResponse(result);
+  return normalizeCommonMojibake(extractHtmlFromModelResponse(result));
 }
 
 async function editHtmlWithGroq({
@@ -254,7 +268,7 @@ async function editHtmlWithGroq({
     messages,
   });
 
-  return extractHtmlFromModelResponse(result);
+  return normalizeCommonMojibake(extractHtmlFromModelResponse(result));
 }
 
 function extractStyleBlocks(html: string): string {
@@ -302,7 +316,7 @@ export async function runGenerateCvJob({
     await setProgress(supabase, cvId, { status: "processing", progress: "Extracting document text...", error_message: null });
 
     const extracted = await mammoth.extractRawText({ buffer: fileBuffer });
-    const docText = extracted.value?.trim();
+    const docText = normalizeCommonMojibake(extracted.value?.trim() || "");
     if (!docText) {
       throw new Error("Document text extraction failed or produced empty text");
     }
