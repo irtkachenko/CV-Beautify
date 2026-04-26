@@ -7,6 +7,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { ArrowLeft, Download, Loader2, FileText, CheckCircle, Sparkles, AlertCircle, X, Menu } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { api, buildUrl, GeneratedCvResponse } from "@shared/routes";
+import type { ResumesListResponse } from "@shared/routes";
 import { generatePdfFromUrl } from "@lib/pdf-generator-fixed";
 import { usePollingJob } from "@/hooks/use-generate";
 import { useQueryClient } from "@tanstack/react-query";
@@ -16,6 +17,7 @@ import { useCvIframePreview } from "@/hooks/use-cv-iframe-preview";
 import { authedFetch } from "@lib/authed-fetch";
 import { useAuth } from "@/hooks/use-auth";
 import { SecureCvIframe } from "@/components/SecureCvIframe";
+import { upsertResumeInList } from "@lib/resume-list-store";
 
 const AI_EDIT_PROMPT_MIN_LENGTH = 10;
 const AI_EDIT_PROMPT_MAX_LENGTH = 1000;
@@ -90,10 +92,10 @@ export default function CvViewPage() {
       setCvData(next);
       setPdfUrl(withCacheBust(next.pdfUrl, next.updatedAt || Date.now()));
 
-      queryClient.setQueryData([api.resumes.list.path], (oldData: GeneratedCvResponse[] | undefined) => {
-        if (!oldData || !Array.isArray(oldData)) return oldData;
-        return oldData.map((item) => (item.id === next.id ? { ...item, ...next } : item));
-      });
+      queryClient.setQueryData<ResumesListResponse | undefined>(
+        [api.resumes.list.path],
+        (current) => upsertResumeInList(current, next)
+      );
     } catch (err) {
       console.error("Error fetching CV:", err);
       setError(t("cv_view.errors.load_failed"));
@@ -323,19 +325,17 @@ export default function CvViewPage() {
         errorMessage: undefined,
         template: cvData.template,
       });
-      queryClient.setQueryData([api.resumes.list.path], (oldData: GeneratedCvResponse[] | undefined) => {
-        if (!oldData || !Array.isArray(oldData)) return oldData;
-        return oldData.map((item) =>
-          item.id === cvData.id
-            ? {
-                ...item,
-                status: "processing",
-                progress: t("cv_view.progress.ai_editing"),
-                errorMessage: null,
-              }
-            : item
-        );
-      });
+      queryClient.setQueryData<ResumesListResponse | undefined>(
+        [api.resumes.list.path],
+        (current) =>
+          upsertResumeInList(current, {
+            ...cvData,
+            status: "processing",
+            progress: t("cv_view.progress.ai_editing"),
+            errorMessage: null,
+            updatedAt: new Date().toISOString(),
+          })
+      );
       queryClient.invalidateQueries({ queryKey: [api.resumes.list.path] });
       queryClient.invalidateQueries({ queryKey: [api.generate.status.path, cvData.id] });
 

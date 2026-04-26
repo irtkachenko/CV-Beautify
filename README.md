@@ -43,6 +43,7 @@ Optional:
 - RLS is enabled on user data tables. If token context is not forwarded, requests will fail even after successful OAuth.
 - Route auth is centralized in `lib/server-auth.ts` (header/cookie token resolution + user validation).
 - Canonical CV deletion endpoint is `DELETE /api/resumes/:id` (no query-param fallback path).
+- Client-side resume cards use a single canonical TanStack Query store shaped as `ResumesListResponse`, with shared cache updates via `lib/resume-list-store.ts`.
 
 ## Useful scripts
 

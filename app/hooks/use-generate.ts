@@ -1,13 +1,12 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, buildUrl } from "@shared/routes";
-import type { GeneratedCvResponse, ResumesListResponse } from "@shared/routes";
+import type { ResumesListResponse } from "@shared/routes";
 import i18n from "@lib/i18n";
 import { parseWithLogging } from "@lib/validation";
 import { authedFetch } from "@lib/authed-fetch";
-import { activeResumeJobsQueryKey } from "@/hooks/use-cvs";
+import { upsertResumeInList } from "@lib/resume-list-store";
 
-// Input type for file upload
 type GenerateCvInput = {
   templateId: number;
   file: File;
@@ -19,12 +18,11 @@ export function useGenerateCv() {
 
   return useMutation({
     mutationFn: async (data: GenerateCvInput) => {
-      // Create FormData for file upload
       const formData = new FormData();
-      formData.append('file', data.file);
-      formData.append('templateId', data.templateId.toString());
+      formData.append("file", data.file);
+      formData.append("templateId", data.templateId.toString());
       if (data.generationPrompt?.trim()) {
-        formData.append('generationPrompt', data.generationPrompt.trim());
+        formData.append("generationPrompt", data.generationPrompt.trim());
       }
       formData.append("temperature", "0.5");
 
@@ -42,120 +40,72 @@ export function useGenerateCv() {
       }
 
       const responseData = await res.json();
-      const parsed = parseWithLogging(api.generate.start.responses[202], responseData, "generate.start");
-      return parsed;
+      return parseWithLogging(api.generate.start.responses[202], responseData, "generate.start");
     },
-    retry: 1, // Retry once for generation failures
-    retryDelay: 2000, // Wait 2 seconds before retry
+    retry: 1,
+    retryDelay: 2000,
     onSuccess: (response) => {
-      queryClient.setQueryData<GeneratedCvResponse[]>(activeResumeJobsQueryKey, (current = []) => {
-        const withoutSameId = current.filter((cv) => cv.id !== response.cv.id);
-        return [response.cv, ...withoutSameId];
-      });
-
       queryClient.setQueryData<ResumesListResponse | undefined>(
         [api.resumes.list.path],
-        (current) => {
-          if (!current) {
-            return {
-              cvs: [response.cv],
-              count: 1,
-              limit: 5,
-              canCreateMore: true,
-            };
-          }
-
-          const alreadyExists = current.cvs.some((cv) => cv.id === response.cv.id);
-          if (alreadyExists) {
-            return current;
-          }
-
-          const nextCvs = [response.cv, ...current.cvs];
-          return {
-            ...current,
-            cvs: nextCvs,
-            count: nextCvs.length,
-            canCreateMore: nextCvs.length < current.limit,
-          };
-        }
+        (current) => upsertResumeInList(current, response.cv)
       );
 
-      queryClient.invalidateQueries({ queryKey: [api.resumes.list.path] });
+      window.setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: [api.resumes.list.path] });
+      }, 5000);
 
-      // Kick an eager refresh without blanking the cached list during route navigation.
-      setTimeout(() => {
-        queryClient.refetchQueries({ queryKey: [api.resumes.list.path] });
-      }, 100);
-      
-      // Scroll to top to show the new CV being generated
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    },
   });
 }
 
-// Hook for polling an individual CV's status
 export function usePollingJob(jobId: number, initialStatus: string) {
   const queryClient = useQueryClient();
-
   const isInitialTerminal = initialStatus === "complete" || initialStatus === "failed";
 
   const query = useQuery({
     queryKey: [api.generate.status.path, jobId],
     queryFn: async () => {
       const url = buildUrl(api.generate.status.path, { jobId });
-
       const res = await authedFetch(url);
       if (!res.ok) {
         throw new Error(i18n.t("errors.fetch_job_status_failed"));
       }
 
       const data = await res.json();
-
-      const parsed = parseWithLogging(api.generate.status.responses[200], data, "generate.status");
-
-      return parsed;
+      return parseWithLogging(api.generate.status.responses[200], data, "generate.status");
     },
-    // Override global staleTime Infinity so polling can restart from cached complete state
     staleTime: 0,
-    refetchOnMount: "always", // Always refetch on mount to get latest status
+    refetchOnMount: "always",
     refetchOnWindowFocus: !isInitialTerminal,
     refetchOnReconnect: !isInitialTerminal,
     refetchIntervalInBackground: !isInitialTerminal,
-    // Retry logic for polling
-    retry: (failureCount, error) => {
-      // Aggressive retry for polling since it's critical
-      if (failureCount < 5) {
-        return true;
-      }
-      return false;
-    },
-    retryDelay: (attemptIndex) => {
-      // Faster retry for polling (1s, 2s, 4s, 8s, 16s max)
-      return Math.min(1000 * 2 ** attemptIndex, 16000);
-    },
-    // Poll every 2 seconds if status is still pending or processing
-    refetchInterval: (query) => {
-      const currentStatus = query.state.data?.status || initialStatus;
+    retry: (failureCount) => failureCount < 5,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 16000),
+    refetchInterval: (currentQuery) => {
+      const currentStatus = currentQuery.state.data?.status || initialStatus;
       if (currentStatus === "pending" || currentStatus === "processing") {
         return 2000;
       }
       return false;
     },
-    enabled: jobId > 0, // Always enable polling, let refetchInterval control when to stop
+    enabled: jobId > 0,
   });
 
-  // Handle side effects (like invalidating queries) in useEffect, not in queryFn
   useEffect(() => {
-    const currentStatus = query.data?.status;
+    if (!query.data) {
+      return;
+    }
 
-    if (query.data) {
-      queryClient.setQueryData<GeneratedCvResponse[]>(activeResumeJobsQueryKey, (current = []) => {
-        const existing = current.find((cv) => cv.id === jobId);
+    queryClient.setQueryData<ResumesListResponse | undefined>(
+      [api.resumes.list.path],
+      (current) => {
+        const existing = current?.cvs.find((cv) => cv.id === jobId);
         if (!existing) {
           return current;
         }
 
-        const nextCv: GeneratedCvResponse = {
+        return upsertResumeInList(current, {
           ...existing,
           status: query.data.status,
           progress: query.data.progress ?? existing.progress,
@@ -165,34 +115,26 @@ export function usePollingJob(jobId: number, initialStatus: string) {
           name: query.data.name ?? existing.name,
           template: query.data.template ?? existing.template,
           updatedAt: new Date().toISOString(),
-        };
+        });
+      }
+    );
 
-        return [nextCv, ...current.filter((cv) => cv.id !== jobId)];
-      });
-    }
-
-    // Invalidate when we get a terminal status OR when data changes from non-terminal to terminal
-    const isTerminalStatus = currentStatus === "complete" || currentStatus === "failed";
-    
+    const isTerminalStatus = query.data.status === "complete" || query.data.status === "failed";
     if (isTerminalStatus) {
-      // Invalidate the resumes list to show updated status
       queryClient.invalidateQueries({ queryKey: [api.resumes.list.path] });
-      // Also invalidate this specific job query to ensure fresh data on remount
       queryClient.invalidateQueries({ queryKey: [api.generate.status.path, jobId] });
 
       window.setTimeout(() => {
         queryClient.invalidateQueries({ queryKey: [api.resumes.list.path] });
       }, 2000);
     }
-  }, [query.data, queryClient, jobId]); // Use query.data instead of query.data?.status to catch all changes
+  }, [jobId, query.data, queryClient]);
 
-  // Also invalidate if initial status is already terminal (for cases where component mounts after completion)
   useEffect(() => {
-    const isInitialTerminal = initialStatus === "complete" || initialStatus === "failed";
     if (isInitialTerminal) {
       queryClient.invalidateQueries({ queryKey: [api.resumes.list.path] });
     }
-  }, [initialStatus, queryClient, jobId]);
+  }, [isInitialTerminal, queryClient]);
 
   return query;
 }
