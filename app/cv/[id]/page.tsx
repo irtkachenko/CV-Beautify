@@ -554,7 +554,9 @@ export default function CvViewPage() {
                     </div>
                   ) : cvData ? (
                     <SecureCvIframe
+                      key={`${cvData.id}:${cvData.updatedAt || cvData.createdAt || "na"}`}
                       cvId={cvData.id}
+                      refreshKey={cvData.updatedAt || cvData.createdAt || Date.now()}
                       onLoad={handleIframeLoad}
                       className={`w-full h-full border-0 absolute top-0 left-0 transition-opacity duration-150 ${iframeReady ? "opacity-100" : "opacity-0"}`}
                       style={{

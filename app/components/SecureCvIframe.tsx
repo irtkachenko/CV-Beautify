@@ -5,6 +5,7 @@ import { supabase } from "@lib/supabase";
 
 interface SecureCvIframeProps {
   cvId: number;
+  refreshKey?: string | number | null;
   onLoad?: (e: React.SyntheticEvent<HTMLIFrameElement>) => void;
   className?: string;
   style?: React.CSSProperties;
@@ -13,6 +14,7 @@ interface SecureCvIframeProps {
 
 export function SecureCvIframe({ 
   cvId, 
+  refreshKey,
   onLoad, 
   className, 
   style, 
@@ -22,6 +24,13 @@ export function SecureCvIframe({
   const [isReady, setIsReady] = useState(false);
   const [tokenSent, setTokenSent] = useState(false);
   const [hasError, setHasError] = useState(false);
+  const srcVersion = refreshKey == null ? "initial" : String(refreshKey);
+
+  useEffect(() => {
+    setIsReady(false);
+    setTokenSent(false);
+    setHasError(false);
+  }, [cvId, srcVersion]);
 
   // Listen for messages from iframe
   useEffect(() => {
@@ -107,7 +116,7 @@ export function SecureCvIframe({
   return (
     <iframe
       ref={iframeRef}
-      src={`/cv-preview/${cvId}`}
+      src={`/cv-preview/${cvId}?v=${encodeURIComponent(srcVersion)}`}
       onLoad={handleIframeLoad}
       className={className}
       style={{

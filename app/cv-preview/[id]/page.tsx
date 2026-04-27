@@ -81,6 +81,7 @@ export default function CvPreviewPage() {
       setIsLoading(true);
       
       const response = await fetch(`/api/generated-cv/${id}/render`, {
+        cache: "no-store",
         headers: {
           "Authorization": `Bearer ${token}`,
         },

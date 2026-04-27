@@ -67,3 +67,4 @@ Adapters:
 - Hardened authenticated client fetches with automatic Supabase session refresh and one-time retry on `401`.
 - Migrated `useMyResumes` to TanStack Query with periodic refetch + explicit invalidation to avoid stale local hook state.
 - Added durable `cv_jobs` queue with authenticated worker endpoint (`/api/cv-jobs/run-next`) for unified generation and AI-edit execution.
+- Forced CV preview iframe refresh on `updatedAt` changes so completed AI edits immediately render fresh HTML instead of stale cached preview.
