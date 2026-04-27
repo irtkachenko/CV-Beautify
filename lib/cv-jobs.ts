@@ -29,6 +29,13 @@ type GeneratedCvRow = {
   cv_templates?: TemplateRow | null;
 };
 
+function normalizeHtmlForDiff(value: string): string {
+  return value
+    .replace(/\s+/g, " ")
+    .replace(/>\s+</g, "><")
+    .trim();
+}
+
 async function resolveTemplateHtml(fileName: string): Promise<string> {
   const candidates = [
     path.join(process.cwd(), "public", "templates", fileName),
@@ -316,16 +323,50 @@ export async function runAiEditJob({
       generationPrompt: prompt,
     });
 
-    const html = ensureTemplateStyles(generatedHtml, currentHtml);
-    if (!html || html.length < 200) {
+    const firstHtml = ensureTemplateStyles(generatedHtml, currentHtml);
+    if (!firstHtml || firstHtml.length < 200) {
       throw new Error("Groq returned empty or invalid HTML output for AI edit");
+    }
+
+    const before = normalizeHtmlForDiff(currentHtml);
+    const firstAfter = normalizeHtmlForDiff(firstHtml);
+
+    let finalHtml = firstHtml;
+    if (before === firstAfter) {
+      await setProgress(supabase, cvId, {
+        status: "processing",
+        progress: "Applying requested edits...",
+      });
+
+      const forcedPrompt = [
+        prompt.trim(),
+        "",
+        "IMPORTANT: Apply at least one visible and concrete change to this CV.",
+        "Do not return HTML that is identical to the input template.",
+      ]
+        .join("\n")
+        .trim();
+
+      const retryHtmlRaw = await generateHtmlWithGroq({
+        templateHtml: currentHtml,
+        docText: sourceDocumentText,
+        generationPrompt: forcedPrompt,
+      });
+      const retryHtml = ensureTemplateStyles(retryHtmlRaw, currentHtml);
+      const retryAfter = normalizeHtmlForDiff(retryHtml);
+
+      if (!retryHtml || retryHtml.length < 200 || retryAfter === before) {
+        throw new Error("AI edit did not change the CV. Please provide a more specific instruction.");
+      }
+
+      finalHtml = retryHtml;
     }
 
     await setProgress(supabase, cvId, {
       status: "complete",
       progress: null,
       error_message: null,
-      html_content: html,
+      html_content: finalHtml,
       pdf_url: `/api/generated-cv/${cvId}/render`,
     });
 
