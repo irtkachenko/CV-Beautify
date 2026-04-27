@@ -97,7 +97,6 @@ export default function CvViewPage() {
 
   useEffect(() => {
     if (!isAuthLoading && !user) {
-      console.log("User not authenticated, redirecting to home");
       router.replace("/");
     }
   }, [isAuthLoading, user, router]);
@@ -250,7 +249,6 @@ export default function CvViewPage() {
 
   const handleSubmitAiEdit = async (e?: React.MouseEvent) => {
     e?.preventDefault();
-    console.log("AI Edit submission started");
     
     if (!cvData) {
       console.error("No CV data available");
@@ -278,7 +276,6 @@ export default function CvViewPage() {
 
     try {
       setIsSubmittingAiEdit(true);
-      console.log("Making AI edit request for CV:", cvData.id);
       const url = buildUrl(api.resumes.aiEdit.path, { id: cvData.id });
       const response = await authedFetch(url, {
         method: api.resumes.aiEdit.method,
@@ -315,9 +312,7 @@ export default function CvViewPage() {
         return;
       }
 
-      const startPayload = await response.json();
-      console.log("AI edit request accepted:", startPayload);
-      void startPayload;
+      await response.json();
 
       setCvData((prev) =>
         prev

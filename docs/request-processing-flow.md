@@ -39,10 +39,11 @@ TanStack Query caches results and invalidates related queries on mutations.
 ## Generation queue flow
 
 1. `POST /api/generate/start` creates `generated_cvs` row with `pending` status and enqueues `cv_jobs` row.
-2. `POST /api/resumes/:id/ai-edit` enqueues edit job in `cv_jobs` (also `pending`).
+2. `POST /api/resumes/:id/ai-edit` marks CV `pending`, then enqueues edit job in `cv_jobs` (also `pending`).
 3. `POST /api/cv-jobs/run-next` claims one pending job for current user and processes it.
 4. Worker updates `generated_cvs` to `processing` then terminal `complete`/`failed`.
-5. Client polling (`use-cvs`, `use-generate`) periodically calls `run-next` and refreshes job status.
+5. Edit jobs intentionally use the same generation prompt pipeline as create jobs; the current CV HTML is used as template input.
+6. Client polling (`use-cvs`, `use-generate`) periodically calls `run-next` and refreshes job status.
 
 ## Error handling path
 

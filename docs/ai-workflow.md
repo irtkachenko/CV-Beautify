@@ -22,6 +22,7 @@ Editor-specific adapters:
 
 - Runtime prompt templates live in `prompts/system-generate-cv.txt`, `prompts/user-generate-cv.txt`, `prompts/system-edit-cv.txt`, and `prompts/user-edit-cv.txt`.
 - Prompt assembly is handled in `lib/cv-prompt-builder.ts`.
+- AI edit jobs run through the same generation prompt chain as create jobs, with current CV HTML injected as template input.
 - Safety and factual rules stay strict.
 - Layout and styling preservation is the default only when the user gives no explicit visual/structural direction.
 - Prompt validation failures should be surfaced as request errors/toasts before a generation or edit job is created or moved into processing.

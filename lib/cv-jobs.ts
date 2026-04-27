@@ -2,7 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import mammoth from "mammoth";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { buildEditPromptMessages, buildGenerationPromptMessages } from "./cv-prompt-builder";
+import { buildGenerationPromptMessages } from "./cv-prompt-builder";
 import { runGroqCompletionWithFallback } from "@lib/services/groq-completion";
 import {
   ensureTemplateStyles,
@@ -28,13 +28,6 @@ type GeneratedCvRow = {
   name: string | null;
   cv_templates?: TemplateRow | null;
 };
-
-function normalizeHtmlForDiff(value: string): string {
-  return value
-    .replace(/\s+/g, " ")
-    .replace(/>\s+</g, "><")
-    .trim();
-}
 
 async function resolveTemplateHtml(fileName: string): Promise<string> {
   const candidates = [
@@ -98,53 +91,41 @@ async function generateHtmlWithGroq({
   return normalizeCommonMojibake(extractHtmlFromModelResponse(result));
 }
 
-async function editHtmlWithGroq({
-  currentHtml,
-  prompt,
-  originalDocText,
-}: {
-  currentHtml: string;
-  prompt: string;
-  originalDocText?: string | null;
-}) {
-  const messages = await buildEditPromptMessages({
-    currentHtml,
-    prompt,
-    originalDocText,
-  });
-
-  const result = await runGroqCompletionWithFallback({
-    temperature: 0.4,
-    maxTokens: 6000,
-    messages,
-  });
-
-  return normalizeCommonMojibake(extractHtmlFromModelResponse(result));
+function stripHtmlToText(value: string): string {
+  const withoutExecutableBlocks = value
+    .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, " ")
+    .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, " ");
+  const withoutTags = withoutExecutableBlocks.replace(/<[^>]+>/g, " ");
+  return normalizeCommonMojibake(
+    withoutTags
+      .replace(/&nbsp;/gi, " ")
+      .replace(/&amp;/gi, "&")
+      .replace(/&lt;/gi, "<")
+      .replace(/&gt;/gi, ">")
+      .replace(/&#39;/gi, "'")
+      .replace(/&quot;/gi, '"')
+      .replace(/\s+/g, " ")
+      .trim()
+  );
 }
 
-async function editHtmlWithGroqForceVisibleChange({
+function buildEditSourceDocumentText({
   currentHtml,
-  prompt,
   originalDocText,
+  useOriginalDocumentContext,
 }: {
   currentHtml: string;
-  prompt: string;
   originalDocText?: string | null;
-}) {
-  const forcedPrompt = [
-    prompt.trim(),
-    "",
-    "IMPORTANT: Apply at least one visible, concrete change to the HTML output.",
-    "Do not return the original HTML unchanged.",
-  ]
-    .join("\n")
-    .trim();
+  useOriginalDocumentContext?: boolean;
+}): string {
+  const currentCvText = stripHtmlToText(currentHtml);
+  const originalText = normalizeCommonMojibake((originalDocText || "").trim());
 
-  return editHtmlWithGroq({
-    currentHtml,
-    prompt: forcedPrompt,
-    originalDocText,
-  });
+  if (useOriginalDocumentContext && currentCvText && originalText) {
+    return `${currentCvText}\n\nOriginal source document:\n${originalText}`;
+  }
+
+  return currentCvText || originalText;
 }
 
 export async function runGenerateCvJob({
@@ -301,10 +282,9 @@ export async function runAiEditJob({
 }) {
   try {
     console.info(`[ai-edit:${cvId}] Job started`);
-    console.info(`[ai-edit:${cvId}] Prompt length: ${prompt.length}`);
     await setProgress(supabase, cvId, {
       status: "processing",
-      progress: "Editing CV with Groq...",
+      progress: "Loading template...",
       error_message: null,
     });
 
@@ -316,58 +296,29 @@ export async function runAiEditJob({
       currentHtml = await resolveTemplateHtml(cv.cv_templates.file_name);
     }
 
-    const firstAttemptStartedAt = Date.now();
-    const generatedHtml = await editHtmlWithGroq({
+    const sourceDocumentText = buildEditSourceDocumentText({
       currentHtml,
-      prompt,
-      originalDocText: useOriginalDocumentContext ? cv.original_doc_text : null,
+      originalDocText: cv.original_doc_text,
+      useOriginalDocumentContext,
     });
-    console.info(
-      `[ai-edit:${cvId}] First AI response received in ${Date.now() - firstAttemptStartedAt}ms (chars: ${generatedHtml.length})`
-    );
+    if (!sourceDocumentText) {
+      throw new Error("CV text context is empty for AI edit");
+    }
+
+    await setProgress(supabase, cvId, {
+      status: "processing",
+      progress: "Generating CV with Groq...",
+    });
+
+    const generatedHtml = await generateHtmlWithGroq({
+      templateHtml: currentHtml,
+      docText: sourceDocumentText,
+      generationPrompt: prompt,
+    });
 
     const html = ensureTemplateStyles(generatedHtml, currentHtml);
     if (!html || html.length < 200) {
       throw new Error("Groq returned empty or invalid HTML output for AI edit");
-    }
-
-    const before = normalizeHtmlForDiff(currentHtml);
-    const after = normalizeHtmlForDiff(html);
-    if (before === after) {
-      console.info(`[ai-edit:${cvId}] First attempt produced no HTML changes. Retrying with forced visible-change instruction.`);
-      const retryStartedAt = Date.now();
-      const retryHtmlRaw = await editHtmlWithGroqForceVisibleChange({
-        currentHtml,
-        prompt,
-        originalDocText: useOriginalDocumentContext ? cv.original_doc_text : null,
-      });
-      console.info(
-        `[ai-edit:${cvId}] Retry AI response received in ${Date.now() - retryStartedAt}ms (chars: ${retryHtmlRaw.length})`
-      );
-      const retryHtml = ensureTemplateStyles(retryHtmlRaw, currentHtml);
-      const retryAfter = normalizeHtmlForDiff(retryHtml);
-
-      if (retryAfter !== before) {
-        console.info(`[ai-edit:${cvId}] Retry produced HTML changes. Saving updated content.`);
-        await setProgress(supabase, cvId, {
-          status: "complete",
-          progress: null,
-          error_message: null,
-          html_content: retryHtml,
-          pdf_url: `/api/generated-cv/${cvId}/render`,
-        });
-        return;
-      }
-
-      console.warn(`[ai-edit:${cvId}] Retry also produced no HTML changes. Completing with no-op warning.`);
-      await setProgress(supabase, cvId, {
-        status: "complete",
-        progress: null,
-        error_message: "AI edit did not apply any changes. Try a more specific instruction.",
-        html_content: currentHtml,
-        pdf_url: `/api/generated-cv/${cvId}/render`,
-      });
-      return;
     }
 
     await setProgress(supabase, cvId, {
@@ -378,7 +329,7 @@ export async function runAiEditJob({
       pdf_url: `/api/generated-cv/${cvId}/render`,
     });
 
-    console.info(`[ai-edit:${cvId}] Job completed with changed HTML`);
+    console.info(`[ai-edit:${cvId}] Job completed`);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown AI edit error";
     console.error(`[ai-edit:${cvId}] Job failed:`, message);

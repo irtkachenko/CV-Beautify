@@ -79,8 +79,6 @@ export async function POST(request: NextRequest) {
     }
 
     // Create CV generation record
-    console.log(`[generate:start] Attempting to create CV record for user ${userId}, template ${templateIdNum}`);
-    
     const { data: newCv, error: createError } = await supabase
       .from("generated_cvs")
       .insert({
@@ -95,8 +93,6 @@ export async function POST(request: NextRequest) {
       })
       .select()
       .single();
-
-    console.log(`[generate:start] Insert result:`, { newCv, createError });
 
     if (createError || !newCv) {
       console.error("Failed to create CV record:", createError);

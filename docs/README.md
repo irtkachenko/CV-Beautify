@@ -17,3 +17,4 @@ Architecture conventions:
 - Canonical CV deletion contract is `DELETE /api/resumes/:id`.
 - Resume list UI reads `generated_cvs` directly through Supabase client with RLS.
 - Generation/edit tasks are enqueued in `cv_jobs` and drained through `POST /api/cv-jobs/run-next`.
+- Edit execution reuses the generation prompt pipeline with the current CV HTML as template input to keep behavior consistent.
