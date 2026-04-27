@@ -2,7 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import mammoth from "mammoth";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { buildGenerationPromptMessages } from "./cv-prompt-builder";
+import { buildEditPromptMessages, buildGenerationPromptMessages } from "./cv-prompt-builder";
 import { runGroqCompletionWithFallback } from "@lib/services/groq-completion";
 import {
   ensureTemplateStyles,
@@ -91,6 +91,30 @@ async function generateHtmlWithGroq({
 
   const result = await runGroqCompletionWithFallback({
     temperature: 0.3,
+    maxTokens: 6000,
+    messages,
+  });
+
+  return normalizeCommonMojibake(extractHtmlFromModelResponse(result));
+}
+
+async function editHtmlWithGroq({
+  currentHtml,
+  prompt,
+  originalDocText,
+}: {
+  currentHtml: string;
+  prompt: string;
+  originalDocText?: string | null;
+}) {
+  const messages = await buildEditPromptMessages({
+    currentHtml,
+    prompt,
+    originalDocText,
+  });
+
+  const result = await runGroqCompletionWithFallback({
+    temperature: 0.4,
     maxTokens: 6000,
     messages,
   });
@@ -347,19 +371,38 @@ export async function runAiEditJob({
         .join("\n")
         .trim();
 
-      const retryHtmlRaw = await generateHtmlWithGroq({
+      const retryGenHtmlRaw = await generateHtmlWithGroq({
         templateHtml: currentHtml,
         docText: sourceDocumentText,
         generationPrompt: forcedPrompt,
       });
-      const retryHtml = ensureTemplateStyles(retryHtmlRaw, currentHtml);
-      const retryAfter = normalizeHtmlForDiff(retryHtml);
+      const retryGenHtml = ensureTemplateStyles(retryGenHtmlRaw, currentHtml);
+      const retryGenAfter = normalizeHtmlForDiff(retryGenHtml);
 
-      if (!retryHtml || retryHtml.length < 200 || retryAfter === before) {
-        throw new Error("AI edit did not change the CV. Please provide a more specific instruction.");
+      if (retryGenHtml && retryGenHtml.length >= 200 && retryGenAfter !== before) {
+        finalHtml = retryGenHtml;
+      } else {
+        const retryEditHtmlRaw = await editHtmlWithGroq({
+          currentHtml,
+          prompt: forcedPrompt,
+          originalDocText: useOriginalDocumentContext ? cv.original_doc_text : null,
+        });
+        const retryEditHtml = ensureTemplateStyles(retryEditHtmlRaw, currentHtml);
+        const retryEditAfter = normalizeHtmlForDiff(retryEditHtml);
+
+        if (!retryEditHtml || retryEditHtml.length < 200 || retryEditAfter === before) {
+          await setProgress(supabase, cvId, {
+            status: "complete",
+            progress: null,
+            error_message: "AI edit did not apply visible changes. Please provide a more specific instruction.",
+            html_content: currentHtml,
+            pdf_url: `/api/generated-cv/${cvId}/render`,
+          });
+          return;
+        }
+
+        finalHtml = retryEditHtml;
       }
-
-      finalHtml = retryHtml;
     }
 
     await setProgress(supabase, cvId, {
