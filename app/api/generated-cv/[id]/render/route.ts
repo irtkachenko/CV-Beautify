@@ -5,6 +5,7 @@ import { parseHTML } from "linkedom";
 import { getOwnedGeneratedCv } from "@lib/services/generated-cv-service";
 
 export const dynamic = "force-dynamic";
+export const fetchCache = "force-no-store";
 export const runtime = "nodejs";
 
 const { document: linkedomDocument } = parseHTML(

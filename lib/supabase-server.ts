@@ -20,13 +20,13 @@ export function createSupabaseServerClient(accessToken?: string) {
       persistSession: false,
       autoRefreshToken: false,
     },
-    global: accessToken
-      ? {
-          headers: {
+    global: {
+      headers: accessToken
+        ? {
             Authorization: `Bearer ${accessToken}`,
-          },
-        }
-      : undefined,
+          }
+        : undefined,
+    },
   });
 }
 

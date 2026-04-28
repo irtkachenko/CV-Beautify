@@ -84,6 +84,8 @@ export default function CvPreviewPage() {
         cache: "no-store",
         headers: {
           "Authorization": `Bearer ${token}`,
+          "Cache-Control": "no-cache",
+          "Pragma": "no-cache",
         },
       });
 

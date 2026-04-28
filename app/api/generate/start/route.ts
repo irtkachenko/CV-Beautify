@@ -11,6 +11,7 @@ import {
 import { enqueueCvJob } from "@lib/cv-jobs-queue";
 
 export const dynamic = "force-dynamic";
+export const fetchCache = "force-no-store";
 
 function isQueueTableMissing(message: string): boolean {
   return /(cv_jobs|table\s+.*cv_jobs|schema cache|does not exist)/i.test(message);

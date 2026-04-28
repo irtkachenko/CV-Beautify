@@ -120,14 +120,14 @@ export default function CvViewPage() {
       return {
         ...prev,
         status: terminal ? polledJob.status : (shouldUpdateStatus ? polledJob.status : prev.status),
-        progress: shouldUpdateStatus && terminal ? (polledJob.progress ?? null) : (polledJob.progress ?? prev.progress),
+        progress: shouldUpdateStatus && terminal ? (polledJob.progress ?? null) : (shouldUpdateStatus ? (polledJob.progress ?? prev.progress) : prev.progress),
         errorMessage: terminal ? (polledJob.errorMessage ?? prev.errorMessage) : (shouldUpdateStatus ? (polledJob.errorMessage ?? prev.errorMessage) : prev.errorMessage),
         pdfUrl: terminal ? (polledJob.pdfUrl ?? prev.pdfUrl) : (shouldUpdateStatus ? (polledJob.pdfUrl ?? prev.pdfUrl) : prev.pdfUrl),
         template: shouldUpdateStatus ? (polledJob.template || prev.template) : prev.template,
       };
     });
 
-    if (polledJob.pdfUrl && cvData && (cvData.status === "pending" || cvData.status === "processing")) {
+    if (polledJob.pdfUrl) {
       const shouldBust = polledJob.status === "complete" || polledJob.status === "failed";
       setPdfUrl(shouldBust ? withCacheBust(polledJob.pdfUrl, Date.now()) : polledJob.pdfUrl);
     }

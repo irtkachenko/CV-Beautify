@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getChatModels, validateModel, getModelChain, clearModelsCache } from "@lib/groq-models";
 
 export const dynamic = "force-dynamic";
+export const fetchCache = "force-no-store";
 
 export async function GET(request: NextRequest) {
   try {

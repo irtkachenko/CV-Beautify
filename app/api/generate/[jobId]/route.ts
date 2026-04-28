@@ -4,6 +4,7 @@ import { mapGeneratedCvRow } from "@lib/cv-mappers";
 import { getOwnedGeneratedCv } from "@lib/services/generated-cv-service";
 
 export const dynamic = "force-dynamic";
+export const fetchCache = "force-no-store";
 
 export async function GET(
   request: NextRequest,

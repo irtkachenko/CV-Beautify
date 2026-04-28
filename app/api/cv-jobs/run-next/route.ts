@@ -10,6 +10,7 @@ import { runAiEditJob, runGenerateCvJobFromText } from "@lib/cv-jobs";
 import { getOwnedGeneratedCv } from "@lib/services/generated-cv-service";
 
 export const dynamic = "force-dynamic";
+export const fetchCache = "force-no-store";
 
 async function processGenerateJob(
   supabase: any,

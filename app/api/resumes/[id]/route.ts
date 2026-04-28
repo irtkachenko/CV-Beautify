@@ -4,6 +4,7 @@ import { mapGeneratedCvRow } from "@lib/cv-mappers";
 import { getOwnedGeneratedCv } from "@lib/services/generated-cv-service";
 
 export const dynamic = "force-dynamic";
+export const fetchCache = "force-no-store";
 
 export async function GET(
   request: NextRequest,
@@ -41,7 +42,13 @@ export async function GET(
       return NextResponse.json({ message: cvResult.message }, { status: cvResult.status });
     }
 
-    return NextResponse.json(mapGeneratedCvRow(cvResult.data as any));
+    return NextResponse.json(mapGeneratedCvRow(cvResult.data as any), {
+      headers: {
+        "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+        "Pragma": "no-cache",
+        "Expires": "0",
+      },
+    });
   } catch (error) {
     console.error("CV by ID error:", error);
     return NextResponse.json({ message: "Internal server error" }, { status: 500 });

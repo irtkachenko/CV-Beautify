@@ -36,6 +36,7 @@ function normalizeHtmlForDiff(value: string): string {
     .trim();
 }
 
+
 async function resolveTemplateHtml(fileName: string): Promise<string> {
   const candidates = [
     path.join(process.cwd(), "public", "templates", fileName),
@@ -173,7 +174,6 @@ export async function runGenerateCvJob({
   generationPrompt?: string | null;
 }) {
   try {
-    console.info(`[generate:${cvId}] Job started`);
     await setProgress(supabase, cvId, {
       status: "processing",
       progress: "Extracting document text...",
@@ -219,7 +219,6 @@ export async function runGenerateCvJob({
       pdf_url: `/api/generated-cv/${cvId}/render`,
     });
 
-    console.info(`[generate:${cvId}] Job completed`);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown generation error";
     console.error(`[generate:${cvId}] Job failed:`, message);
@@ -246,7 +245,6 @@ export async function runGenerateCvJobFromText({
   generationPrompt?: string | null;
 }) {
   try {
-    console.info(`[generate:${cvId}] Text job started`);
     const normalizedDocText = normalizeCommonMojibake((docText || "").trim());
     if (!normalizedDocText) {
       throw new Error("Document text is empty");
@@ -285,7 +283,6 @@ export async function runGenerateCvJobFromText({
       html_content: html,
       pdf_url: `/api/generated-cv/${cvId}/render`,
     });
-    console.info(`[generate:${cvId}] Text job completed`);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown generation error";
     console.error(`[generate:${cvId}] Text job failed:`, message);
@@ -312,7 +309,6 @@ export async function runAiEditJob({
   useOriginalDocumentContext?: boolean;
 }) {
   try {
-    console.info(`[ai-edit:${cvId}] Job started`);
     await setProgress(supabase, cvId, {
       status: "processing",
       progress: "Loading template...",
@@ -341,10 +337,10 @@ export async function runAiEditJob({
       progress: "Generating CV with Groq...",
     });
 
-    const generatedHtml = await generateHtmlWithGroq({
-      templateHtml: currentHtml,
-      docText: sourceDocumentText,
-      generationPrompt: prompt,
+    const generatedHtml = await editHtmlWithGroq({
+      currentHtml,
+      prompt,
+      originalDocText: useOriginalDocumentContext ? cv.original_doc_text : null,
     });
 
     const firstHtml = ensureTemplateStyles(generatedHtml, currentHtml);
@@ -354,6 +350,7 @@ export async function runAiEditJob({
 
     const before = normalizeHtmlForDiff(currentHtml);
     const firstAfter = normalizeHtmlForDiff(firstHtml);
+
 
     let finalHtml = firstHtml;
     if (before === firstAfter) {
@@ -371,10 +368,10 @@ export async function runAiEditJob({
         .join("\n")
         .trim();
 
-      const retryGenHtmlRaw = await generateHtmlWithGroq({
-        templateHtml: currentHtml,
-        docText: sourceDocumentText,
-        generationPrompt: forcedPrompt,
+      const retryGenHtmlRaw = await editHtmlWithGroq({
+        currentHtml,
+        prompt: forcedPrompt,
+        originalDocText: useOriginalDocumentContext ? cv.original_doc_text : null,
       });
       const retryGenHtml = ensureTemplateStyles(retryGenHtmlRaw, currentHtml);
       const retryGenAfter = normalizeHtmlForDiff(retryGenHtml);
@@ -405,6 +402,9 @@ export async function runAiEditJob({
       }
     }
 
+    const finalAfter = normalizeHtmlForDiff(finalHtml);
+
+    
     await setProgress(supabase, cvId, {
       status: "complete",
       progress: null,
@@ -413,7 +413,14 @@ export async function runAiEditJob({
       pdf_url: `/api/generated-cv/${cvId}/render`,
     });
 
-    console.info(`[ai-edit:${cvId}] Job completed`);
+    // Verify the update by fetching the record
+    const { data: updatedCv } = await supabase
+      .from("generated_cvs")
+      .select("updated_at, html_content")
+      .eq("id", cvId)
+      .single();
+
+
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown AI edit error";
     console.error(`[ai-edit:${cvId}] Job failed:`, message);
